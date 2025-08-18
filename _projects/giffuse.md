@@ -6,12 +6,11 @@ date: 2025-07-06
 detail: true
 
 # links
-live_url: https://giffuse.example
-repo_url: https://github.com/you/giffuse
-demo_url: https://www.youtube.com/watch?v=Zi_XLOBDo_Y
+live_url: 
+repo_url: https://github.com/dinablachman/giffuse
 
 # tech
-stack: [React, TypeScript, Tailwind, ffmpeg.wasm]
+stack: [React/TypeScript, Node/Express (fluent-ffmpeg), FastAPI (MoviePy)]
 
 # meta
 status: active
@@ -46,7 +45,7 @@ Tumblr’s native composer doesn’t handle external audio, and desktop tools ad
   - encode `libx264 -pix_fmt yuv420p -crf 23 -preset veryfast`
 
 ## demo
-*(see the embedded video at the top; it should be visible on the detail page only)*
+*(coming soon)*
 
 ## results
 - typical 15s output exports in **~6–9s** on M2 MacBook Air

@@ -10,7 +10,7 @@ i care deeply about how generative AI models are developed, regulated, and integ
 
 this summer, under the guidance of [Prof. Muresan](https://www.cs.columbia.edu/~smara/), i helped develop a human-AI collaboration framework to detect prosecutorial misconduct with Columbia Law School and Columbia Journalism Investigations.
 
-before that, i was an API intern at [Carson](https://www.carson.live/).
+before that, i was an API intern at [Carson](https://www.carson.live/), where i built and shipped code used across hundreds of multifamily properties to automate resident-facing workflows.
 
 ## contact me
 
