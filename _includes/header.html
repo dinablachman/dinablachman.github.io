@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <script>
+        (function () {
+          var m = localStorage.getItem('theme');
+          if (m === 'dark' || (!m && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark-mode');
+          }
+        })();
+        </script>
+        
+<link rel="stylesheet" href="{{ '/assets/css/custom.css' | relative_url }}">
+
+<header>
+    {% include theme_toggle.html %}
+    <h1 class="title">{{ site.title }}</h1>
+    <nav>
+        <p>
+            <a href="{{ '/' | relative_url }}">home</a>
+            <a href="{{ '/projects/' | relative_url }}">projects</a>
+            <a href="{{ '/blog/' | relative_url }}">blog</a>
+        
+            {% for link in site.links %}
+                <a href="{{ link[1] | relative_url }}">{{ link[0] }}</a>
+            {% endfor %}
+            
+            {% for link in site.special_links %}
+                    <a href="{{ link[1] }}">[{{ link[0] }}]</a>
+            {% endfor %}
+        </p>
+    </nav>
+</header>

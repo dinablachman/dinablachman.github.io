@@ -1,0 +1,32 @@
+---
+layout: page
+---
+
+<article class="project-detail">
+  {% if page.subtitle %}<p class="project-sub"><em>{{ page.subtitle }}</em></p>{% endif %}
+
+  {% if page.demo_url %}
+    {% if page.demo_url contains 'youtu' %}
+      <div style="aspect-ratio:16/9">
+        <iframe
+          src="{{ page.demo_url | replace: 'watch?v=', 'embed/' | replace: 'youtu.be/', 'www.youtube.com/embed/' }}"
+          title="demo" allowfullscreen style="width:100%;height:100%;border:0"></iframe>
+      </div>
+    {% else %}
+      <video src="{{ page.demo_url | relative_url }}" controls {% if page.poster %}poster="{{ page.poster | relative_url }}"{% endif %} style="width:100%"></video>
+    {% endif %}
+  {% endif %}
+
+  <p class="project-links">
+    {% if page.live_url %}<a href="{{ page.live_url }}">live</a>{% endif %}
+    {% if page.repo_url %}{% if page.live_url %} · {% endif %}<a href="{{ page.repo_url }}">repo</a>{% endif %}
+  </p>
+
+  {% if page.stack %}
+    <p class="project-stack"><strong>stack:</strong> {{ page.stack | join: ', ' }}</p>
+  {% endif %}
+
+  <article class="project-content">
+    {{ content }}
+  </article>
+</article>

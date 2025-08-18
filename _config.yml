@@ -1,0 +1,77 @@
+title: dina blachman
+description: my cs personal portfolio
+url: "https://dinablachman.github.io"
+
+theme: jekyll-bear-theme
+
+plugins: []
+whitelist: []    # optional; can remove
+
+markdown: kramdown
+
+compress_html:
+  clippings: all
+  comments: [""]
+  endings: [html, head, body, li, dt, dd, rt, rp, optgroup, option, colgroup, caption, thead, tbody, tfoot, tr, td, th]
+  profile: false
+  blanklines: false
+  ignore:
+    envs: []
+
+collections:
+  projects:
+    output: true
+  my_tags:
+    output: true
+    permalink: /tagged/:slug/
+
+# global permalink style (projects will be /projects/slug/)
+permalink: /:collection/:name/
+
+defaults:
+  - scope:
+      path: ""
+      type: my_tags
+    values:
+      layout: tagged
+
+timezone: America/New_York
+future: false
+
+exclude:
+  - README.md
+  - LICENSE.md
+  - vendor
+
+# jekyll-bear theme specific settings
+bear:
+  title: "dina blachman"
+  description: "my cs personal portfolio"
+  author: "dina blachman"
+  email: "db3654@barnard.edu"
+  url: "https://dinablachman.github.io"
+  baseurl: ""
+  lang: "en"
+  timezone: "America/New_York"
+  encoding: "utf-8"
+  permalink: "/blog/:slug"          # bear’s blog posts under /blog/
+  paginate: 5
+  paginate_path: "/blog/page:num/"
+  categories: true
+  tags: true
+  archives: true
+  search: true
+  comments: false
+  social:
+    github: "dinablachman"
+    linkedin: "dinablachman"
+    twitter: ""
+    facebook: ""
+    instagram: ""
+    youtube: ""
+    email: "db3654@barnard.edu"
+
+links:
+  # Resume: /assets/resume.pdf
+special_links: {}
+excerpt_separator: "<!--more-->"

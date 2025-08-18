@@ -1,0 +1,38 @@
+<section class="project-item">
+    <h2 class="project-title">
+      {% if include.project.detail %}
+        <a href="{{ include.project.url | relative_url }}">{{ include.project.title }}</a>
+      {% else %}
+        <span class="linklike">{{ include.project.title }}</span>
+      {% endif %}
+    </h2>
+  
+    {% if include.project.subtitle %}
+      <p><em>{{ include.project.subtitle }}</em></p>
+    {% endif %}
+  
+    <p class="project-links">
+      {% if include.project.live_url %}<a href="{{ include.project.live_url }}">live</a>{% endif %}
+      {% if include.project.repo_url %}{% if include.project.live_url %} · {% endif %}<a href="{{ include.project.repo_url }}">repo</a>{% endif %}
+    </p>
+  
+    {% if include.project.stack %}
+      <p><strong>stack:</strong> {{ include.project.stack | join: ', ' }}</p>
+    {% endif %}
+  
+    {%- assign teaser_raw = include.project.excerpt | default: include.project.content -%}
+    {%- assign teaser = teaser_raw | strip_html | strip_newlines -%}
+    {% if teaser != "" %}
+      <p class="project-teaser">
+        {{ teaser | truncate: 260 }}
+        {% if include.project.detail %}
+          <span class="read-more"> <a href="{{ include.project.url | relative_url }}">read more →</a></span>
+        {% endif %}
+      </p>
+    {% endif %}
+  
+    {% if include.project.tags %}
+      <p><small>tags: {{ include.project.tags | join: ', ' }}</small></p>
+    {% endif %}
+  </section>
+  
