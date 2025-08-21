@@ -14,23 +14,9 @@ title: Blog
         <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
         <small>{{ post.date | date: "%Y-%m-%d" }}</small>
       {% endif %}
+      {% if post.preview and post.preview != "" %}
+        <br><small class="post-preview">{{ post.preview }}</small>
+      {% endif %}
     </li>
   {% endfor %}
 </ul>
-
-<style>
-.coming-soon-post {
-  color: #666;
-  font-style: italic;
-  cursor: default;
-}
-
-.coming-soon-label {
-  background-color: #f0f0f0;
-  color: #666;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 0.8em;
-  margin-left: 8px;
-}
-</style>

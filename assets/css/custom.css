@@ -426,4 +426,43 @@
 }
 .project-stack { margin: .25rem 0 1rem 0; }
 
+/* =============================================================================
+   BLOG POST STYLING
+   ============================================================================= */
+
+.coming-soon-post {
+  color: #666;
+  font-style: italic;
+  cursor: default;
+}
+
+.coming-soon-label {
+  background-color: #f0f0f0;
+  color: #666;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+
+.post-preview {
+  color: #666;
+  font-style: italic;
+  display: block;
+  margin-top: 2px;
+}
+
+/* Dark mode overrides for blog post styling */
+.dark-mode .coming-soon-post {
+  color: var(--text-color); /* Use white text in dark mode */
+}
+
+.dark-mode .coming-soon-label {
+  background-color: var(--code-background-color);
+  color: var(--text-color);
+}
+
+.dark-mode .post-preview {
+  color: var(--text-color);
+}
   
