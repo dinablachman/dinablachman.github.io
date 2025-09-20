@@ -1,13 +1,13 @@
 ---
 layout: project
-title: Ghostfeed
-subtitle: Revive suspended/deleted Twitter accounts via Wayback Machine
+title: PastChirps
+subtitle: organize archived tweets in a readable timeline view via Wayback Machine
 date: 2025-08-16
 detail: false
 
 # links
 live_url: 
-repo_url: https://github.com/dinablachman/ghostfeed
+repo_url: 
 
 # tech
 stack: [React, TypeScript, Wayback Machine API, Node.js]
@@ -18,7 +18,8 @@ role: solo
 tags: [tool, web, archive]
 
 # media (optional)
-thumb: /assets/ghostfeed/cover.jpg
-poster: /assets/ghostfeed/demo-poster.jpg
+thumb: 
+poster:
+gif: /assets/gifs/past-chirps.gif
 ---
-Ghostfeed surfaces suspended or deleted Twitter accounts using the Internet Archive’s Wayback Machine, letting you browse lost timelines.
+after a few fan pages i loved went down, i built this to bring their public archived tweets back into a smooth timeline.

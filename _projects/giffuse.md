@@ -1,13 +1,13 @@
 ---
 layout: project
 title: Giffuse
-subtitle: Stitch Tumblr gifs + TikTok audio
+subtitle: Stitch Tumblr gifs + TikTok audio into an mp4 in browser
 date: 2025-07-06
-detail: true
+detail: false
 
 # links
 live_url: 
-repo_url: https://github.com/dinablachman/giffuse
+repo_url: 
 
 # tech
 stack: [React/TypeScript, Node/Express (fluent-ffmpeg), FastAPI (MoviePy)]
@@ -18,10 +18,12 @@ role: solo
 tags: [tool, video, web]
 
 # media (optional)
-thumb: /assets/giffuse/cover.jpg
-poster: /assets/giffuse/demo-poster.jpg
+thumb: 
+poster:
+gif: /assets/gifs/giffuse.gif
 ---
-Giffuse lets you stitch Tumblr GIFs to TikTok audio in the browser, no installs.
+
+a small personal drag & drop editing tool i'm building because i still haven't learned AfterEffects. 
 
 <!--more-->
 

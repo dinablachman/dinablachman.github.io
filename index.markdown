@@ -4,13 +4,13 @@ title: about me
 description: my cs personal portfolio
 ---
 
-hi, i’m **dina**! i'm a student + developer at Columbia studying **cs & philosophy**.
+hi, i’m **dina**! i'm a student at Columbia studying **CS & Philosophy**.
 
-i care deeply about how generative AI models are developed, regulated, and integrated into our daily lives without stripping away human creativity and agency.
+i am most interested in learning how generative AI models can be built and trained to make our lives more fulfilling while putting human creativity and agency at the forefront.
 
-this summer, under the guidance of [Prof. Muresan](https://www.cs.columbia.edu/~smara/), i helped develop a human-AI collaboration framework to detect prosecutorial misconduct with Columbia Law School and Columbia Journalism Investigations.
+this summer, under the guidance of [Prof. Muresan](https://www.cs.columbia.edu/~smara/), i helped develop a human-AI collaboration framework to detect prosecutorial misconduct with Columbia Law School and Columbia Journalism Investigations. our poster can be found [here](/assets/improperconduct.pdf).
 
-before that, i was an API intern at [Carson](https://www.carson.live/), where i built and shipped code used across hundreds of multifamily properties to automate resident-facing workflows.
+before that, i was an API intern at [Carson](https://www.carson.live/).
 
 ## contact me
 

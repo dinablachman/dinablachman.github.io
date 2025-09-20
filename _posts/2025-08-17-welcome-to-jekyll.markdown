@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "from zero to fine-tuning: what research taught me fast"
+title:  "a postmortem on GPT-4o"
 date:   2025-08-16 19:05:31 -0400
 categories: jekyll update
 coming_soon: true
