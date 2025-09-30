@@ -12,6 +12,10 @@ this summer, under the guidance of [Prof. Muresan](https://www.cs.columbia.edu/~
 
 before that, i was an API intern at [Carson](https://www.carson.live/).
 
+## currently up to:
+
+on campus, i'm a [Cursor](https://cursor.com/) Lead and a fellow in the Columbia AI Alignment Club, curriculum [here](https://docs.google.com/document/d/1gDIPzQ6b8LcJhfrag_Gy9ca6ziB4fYfKu-zMR6qYeiE/edit?tab=t.0#heading=h.c6ivfpz8bbwa). i'm also co-authoring a research paper that extends our summer work.
+
 ## contact me
 
 you can reach me by email [db3654@barnard.edu](mailto:db3654@barnard.edu), or find me on [github](https://github.com/dinablachman) and [linkedin](https://www.linkedin.com/in/dinablachman/).
