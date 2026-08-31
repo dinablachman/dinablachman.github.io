@@ -7,19 +7,63 @@
 
    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
 
+   /* Apple Garamond (self-hosted) */
+   @font-face {
+       font-family: 'Apple Garamond';
+       src: url('../fonts/AppleGaramond-Light.ttf') format('truetype');
+       font-weight: 300;
+       font-style: normal;
+       font-display: swap;
+   }
+   @font-face {
+       font-family: 'Apple Garamond';
+       src: url('../fonts/AppleGaramond-LightItalic.ttf') format('truetype');
+       font-weight: 300;
+       font-style: italic;
+       font-display: swap;
+   }
+   @font-face {
+       font-family: 'Apple Garamond';
+       src: url('../fonts/AppleGaramond-Regular.ttf') format('truetype');
+       font-weight: 400;
+       font-style: normal;
+       font-display: swap;
+   }
+   @font-face {
+       font-family: 'Apple Garamond';
+       src: url('../fonts/AppleGaramond-Italic.ttf') format('truetype');
+       font-weight: 400;
+       font-style: italic;
+       font-display: swap;
+   }
+   @font-face {
+       font-family: 'Apple Garamond';
+       src: url('../fonts/AppleGaramond-Bold.ttf') format('truetype');
+       font-weight: 700;
+       font-style: normal;
+       font-display: swap;
+   }
+   @font-face {
+       font-family: 'Apple Garamond';
+       src: url('../fonts/AppleGaramond-BoldItalic.ttf') format('truetype');
+       font-weight: 700;
+       font-style: italic;
+       font-display: swap;
+   }
+
    /* =============================================================================
       CSS CUSTOM PROPERTIES (VARIABLES)
       ============================================================================= */
    
    :root {
        /* Layout */
-       --width: 720px;
+       --width: 840px;
        
        /* Typography */
-       --font-main: 'IBM Plex Mono', monospace;
-       --font-secondary: 'IBM Plex Mono', monospace;
+       --font-main: 'Apple Garamond', Garamond, Georgia, 'Times New Roman', serif;
+       --font-secondary: 'Apple Garamond', Garamond, Georgia, 'Times New Roman', serif;
        --font-monospace: 'IBM Plex Mono', monospace;
-       --font-scale: 0.9em;
+       --font-scale: 1.15em;
        
        /* Spacing */
        --spacing-xs: 5px;
@@ -520,3 +564,30 @@
   color: var(--text-color);
 }
   
+   /* =============================================================================
+      TITLE TYPEWRITER CARET
+      ============================================================================= */
+   header h1.title {
+       position: relative;
+       white-space: nowrap;
+   }
+   .typing-caret {
+       display: inline-block;
+       width: 0.6ch;
+       margin-left: 2px;
+       border-right: 2px solid var(--heading-color);
+   }
+   /* Active typing: classic retro rapid blink */
+   .typing-caret-active {
+       animation: caretTypeBlink 0.12s steps(1, end) infinite;
+   }
+   /* Idle typing: subtle slower blink */
+   .typing-caret-idle {
+       animation: caretIdleBlink 1s steps(1, end) infinite;
+   }
+   @keyframes caretTypeBlink {
+       50% { border-color: transparent; }
+   }
+   @keyframes caretIdleBlink {
+       60% { border-color: transparent; }
+   }

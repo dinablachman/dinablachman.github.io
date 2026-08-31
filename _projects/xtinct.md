@@ -1,6 +1,6 @@
 ---
 layout: project
-title: PastChirps
+title: xTinct
 subtitle: organize archived tweets in a readable timeline view via Wayback Machine
 date: 2025-08-16
 detail: false
