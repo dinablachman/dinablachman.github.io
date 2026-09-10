@@ -17,6 +17,7 @@ const RIM_Y = GY + 93;          // centre of outer rim ellipse
 const RY_RATIO = 0.34;
 const SPOUT_X = CX - 34;
 const SPOUT_Y = GY - 130;
+export const GLASS_FOOT = GY + 752;   // where the glass meets the counter
 
 export function rx(y) { return 190 - 0.0933 * (y - (GY + 80)); }
 export function ry(y) { return RY_RATIO * rx(y); }
@@ -107,6 +108,7 @@ export class Drink {
     this.sipping = false;
     this.dustColor = null;
     this.dustResolve = null;
+    this.hazeBaked = 0;
     this._totalTarget = 0;
   }
 
@@ -168,18 +170,25 @@ export class Drink {
 
   // garnish runs on its own timer; returns a promise resolved when settled
   garnish(id) {
-    return new Promise(resolve => {
+    return new Promise(res => {
+      // never let a garnish stall the flow
+      let done = false;
+      const resolve = () => { if (!done) { done = true; clearTimeout(guard); res(); } };
+      const guard = setTimeout(resolve, 5000);
       if (id === 'petal') {
         const fw = this._foamBox().w;
-        this.petal = { x: CX + fw * 0.12, y: SPOUT_Y + 40, vy: 0, rot: -0.6, vr: 1.4, landed: false, onLiquid: false, resolve };
+        this.petal = { x: CX + fw * 0.12, y: -140, vy: 0, rot: -0.6, vr: 1.4, landed: false, onLiquid: false, resolve };
       } else {
-        const n = this.reduced ? 40 : 90;
+        const n = this.reduced ? 60 : 140;
         this.dustColor = id === 'cocoa' ? '#4a2a17' : '#8a4b1e';
         for (let i = 0; i < n; i++) {
+          // bias toward the middle of the dome, like a sieve held over it
+          const u = (Math.random() + Math.random() - 1) * 0.4;
           this.dustFalling.push({
-            x: CX + rand(-1, 1) * this._foamBox().w * 0.42,
-            y: SPOUT_Y + rand(-160, 40),
-            vy: rand(160, 260), r: rand(1.2, 2.6), a: rand(0.5, 0.95)
+            x: CX + u * this._foamBox().w,
+            y: SPOUT_Y + rand(-200, 40),
+            vy: rand(160, 260), r: rand(1, 2.2), a: rand(0.35, 0.8),
+            sink: rand(6, 46)      // how far below the top edge it comes to rest
           });
         }
         this.dustResolve = resolve;
@@ -255,9 +264,9 @@ export class Drink {
 
   _foamBox() {
     const yTop = this.surface;                    // liquid surface centre
-    const wAvail = 2 * rx(Math.max(yTop, RIM_Y + 60)) * 0.95;
+    const wAvail = 2 * rx(Math.max(yTop, RIM_Y + 60)) * 1.02;
     const s = wAvail / this.art.foam.width;
-    return { w: wAvail, h: this.art.foam.height * s, s, bottom: yTop + 24 };
+    return { w: wAvail, h: this.art.foam.height * s, s, bottom: yTop + 14 };
   }
 
   _profile(img) {
@@ -276,19 +285,33 @@ export class Drink {
     return prof;
   }
 
-  _tintFoam(tint) {
+  // Bake the foam sprite: neutral base * recipe tint, plus (once garnished) a
+  // haze of dust over the upper dome. Masked to the foam's own alpha so nothing
+  // leaks onto the wall behind it.
+  _tintFoam(tint, haze = 0) {
     const img = this.art.foam;
     const c = this.foamCanvas;
-    c.width = img.width; c.height = img.height;
+    const w = img.width, h = img.height;
+    c.width = w; c.height = h;
     const x = c.getContext('2d');
-    x.clearRect(0, 0, c.width, c.height);
+    x.clearRect(0, 0, w, h);
     x.drawImage(img, 0, 0);
     x.globalCompositeOperation = 'multiply';
     x.fillStyle = tint;
-    x.fillRect(0, 0, c.width, c.height);
+    x.fillRect(0, 0, w, h);
+    if (haze > 0) {
+      const dc = this.dustColor || '#4a2a17';
+      const g = x.createRadialGradient(w * 0.52, h * 0.3, 8, w * 0.5, h * 0.38, w * 0.5);
+      g.addColorStop(0, mix(dc, '#ffffff', 1 - 0.85 * haze));
+      g.addColorStop(0.65, mix(dc, '#ffffff', 1 - 0.45 * haze));
+      g.addColorStop(1, '#ffffff');
+      x.fillStyle = g;
+      x.fillRect(0, 0, w, h);
+    }
     x.globalCompositeOperation = 'destination-in';
     x.drawImage(img, 0, 0);
     x.globalCompositeOperation = 'source-over';
+    this.hazeBaked = haze;
     return c;
   }
 
@@ -358,14 +381,19 @@ export class Drink {
       for (const p of this.dustFalling) {
         p.vy += 500 * dt; p.y += p.vy * dt;
         const col = clamp(Math.round((p.x - (CX - fb.w / 2)) / fb.s), 0, this.foamProfile.length - 1);
-        const landY = fb.bottom - fb.h + this.foamProfile[col] * fb.s + rand(0, 6);
+        const landY = fb.bottom - fb.h + this.foamProfile[col] * fb.s + p.sink * fb.s;
         if (p.y >= landY) {
           this.dust.push({ u: (p.x - CX) / fb.w, v: (landY - (fb.bottom - fb.h)) / fb.h, r: p.r, a: p.a });
           p.done = true;
         }
       }
       this.dustFalling = this.dustFalling.filter(p => !p.done);
-      if (!this.dustFalling.length && this.dustResolve) { this.dustResolve(); this.dustResolve = null; }
+      const haze = Math.min(1, this.dust.length / 90);
+      if (this.foam && Math.abs(haze - (this.hazeBaked || 0)) > 0.06) this.foamTinted = this._tintFoam(this.foam.tint, haze);
+      if (!this.dustFalling.length && this.dustResolve) {
+        this.foamTinted = this._tintFoam(this.foam.tint, 1);
+        this.dustResolve(); this.dustResolve = null;
+      }
     }
 
     // petal
@@ -385,12 +413,13 @@ export class Drink {
       if (p.y < landY - 1 && !p.landed) {
         p.vy += 520 * dt; p.y += Math.min(p.vy, 380) * dt; p.rot += p.vr * dt;
         p.x += Math.sin(this.time * 6) * 30 * dt;
-        if (p.y >= landY) { p.y = landY; p.landed = true; if (p.resolve) { p.resolve(); p.resolve = null; } }
+        if (p.y >= landY) { p.y = landY; p.landed = true; }
       } else {
         p.landed = true;
         p.y += (landY - p.y) * Math.min(1, 8 * dt);
         p.rot += (0.25 - p.rot) * Math.min(1, 2 * dt);
       }
+      if (p.landed && p.resolve) { p.resolve(); p.resolve = null; }
     }
   }
 
@@ -519,15 +548,6 @@ export class Drink {
           ctx.fill();
         }
         ctx.globalAlpha = 1;
-        // a soft haze of dust over the top of the foam
-        ctx.save();
-        ctx.globalAlpha = 0.28 * a;
-        const g = ctx.createRadialGradient(CX, fb.bottom - h * 0.75, 4, CX, fb.bottom - h * 0.7, fb.w * 0.42);
-        g.addColorStop(0, this.dustColor || '#4a2a17');
-        g.addColorStop(1, rgba(this.dustColor || '#4a2a17', 0));
-        ctx.fillStyle = g;
-        ctx.fillRect(CX - fb.w / 2, fb.bottom - h, fb.w, h * 0.7);
-        ctx.restore();
       }
     }
     if (this.dustFalling.length) {

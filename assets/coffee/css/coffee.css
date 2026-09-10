@@ -68,10 +68,8 @@ html, body.coffee-body {
 
 .menu__paper {
   position: relative;
-  width: min(440px, 100%);
-  aspect-ratio: 560 / 968;
-  max-height: 92vh;
-  padding: 9% 9% 7%;
+  width: min(480px, 100%);
+  padding: clamp(28px, 6vh, 48px) clamp(28px, 8%, 44px) clamp(22px, 4vh, 36px);
   background: url('../art/menu-paper.png') center / 100% 100% no-repeat;
   filter: drop-shadow(0 18px 28px rgba(80, 40, 10, .28));
   display: flex;
@@ -83,7 +81,7 @@ html, body.coffee-body {
   to   { opacity: 1; transform: none; }
 }
 
-.menu__head { text-align: center; margin-bottom: 4%; }
+.menu__head { text-align: center; margin-bottom: clamp(10px, 2.5vh, 22px); }
 .menu__eyebrow {
   margin: 0;
   font-family: var(--hand);
@@ -112,9 +110,7 @@ html, body.coffee-body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2.4%;
-  flex: 1;
-  justify-content: center;
+  gap: clamp(4px, 1.2vh, 12px);
 }
 
 .menu__item {
@@ -187,7 +183,7 @@ html, body.coffee-body {
 }
 
 .menu__foot {
-  margin: 3% 0 0;
+  margin: clamp(10px, 2.5vh, 22px) 0 0;
   text-align: center;
   font-family: var(--hand);
   font-size: clamp(13px, 1.9vh, 16px);
@@ -326,7 +322,10 @@ html, body.coffee-body {
 }
 .hold__fill { display: none; }
 
+.hold[hidden] { display: none; }
+
 .ghost {
+  grid-column: 2;
   justify-self: end;
   padding: 12px 18px;
   border: 2px solid var(--ink);
@@ -345,7 +344,7 @@ html, body.coffee-body {
   .hud { grid-template-columns: 1fr; gap: 10px; }
   .hold { width: 104px; height: 104px; font-size: 17px; justify-self: center; }
   .dialog { min-height: 74px; padding: 14px 14px 12px; }
-  .ghost { justify-self: center; }
+  .ghost { grid-column: 1; justify-self: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {

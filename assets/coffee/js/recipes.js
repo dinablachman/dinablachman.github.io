@@ -8,14 +8,13 @@
 //   foam    hold: pipe cold foam        { tint }
 //   garnish auto: dust / petal          { id }
 //
-// `amount` is a fraction of the glass; a recipe's pours should sum to ~0.84
-// so there is headroom for foam under the rim.
+// `amount` is a fraction of the glass; a recipe's pours should sum to ~0.92
+// so the surface sits just under the rim with the foam mounded above it.
 
 export const RECIPES = [
   {
     id: 'vanilla-pumpkin',
     name: 'vanilla iced latte',
-    sub: 'pumpkin cream cold foam',
     blurb: 'espresso, vanilla, oat milk, ice, pumpkin cream',
     swatch: 'linear-gradient(#f3d3a6 0 28%, #eadbc9 28% 62%, #3a2214 62%)',
     intro: 'vanilla, then the shot. you pour, i talk.',
@@ -27,7 +26,7 @@ export const RECIPES = [
         color: '#c98a4a', top: '#e3ab6b', amount: 0.06, holdMs: 900,
         say: 'a slow ribbon of vanilla. it sinks, then thinks about it.' },
       { kind: 'pour', id: 'milk', label: 'hold to pour the milk',
-        color: '#ede0cf', top: '#f7efe3', amount: 0.52, holdMs: 1800,
+        color: '#ede0cf', top: '#f7efe3', amount: 0.60, holdMs: 1900,
         say: 'milk clouds up through the espresso. this is the part everyone watches.' },
       { kind: 'ice', label: 'hold to add ice', count: 4,
         say: 'four cubes. the glass goes cold in your hand.' },
@@ -41,7 +40,6 @@ export const RECIPES = [
   {
     id: 'tiramisu',
     name: 'tiramisu iced latte',
-    sub: 'mascarpone foam, cocoa',
     blurb: 'espresso, brown sugar, milk, ice, mascarpone cream, cocoa',
     swatch: 'linear-gradient(#f1e7d6 0 26%, #d9c3a8 26% 60%, #2e1a10 60%)',
     intro: 'a dessert pretending to be a coffee. let\u2019s pretend together.',
@@ -53,7 +51,7 @@ export const RECIPES = [
         color: '#8a4d22', top: '#b56f3a', amount: 0.06, holdMs: 900,
         say: 'brown sugar syrup. it goes amber where it meets the espresso.' },
       { kind: 'pour', id: 'milk', label: 'hold to pour the milk',
-        color: '#e6d8c4', top: '#f4ebdd', amount: 0.52, holdMs: 1800,
+        color: '#e6d8c4', top: '#f4ebdd', amount: 0.60, holdMs: 1900,
         say: 'the milk marbles in. for a second it looks like a painting of weather.' },
       { kind: 'ice', label: 'hold to add ice', count: 4,
         say: 'ice. it clinks, which is most of the reason to have it.' },
@@ -67,7 +65,6 @@ export const RECIPES = [
   {
     id: 'rose',
     name: 'rose iced latte',
-    sub: 'rose cold foam, petal',
     blurb: 'espresso, rose syrup, milk, ice, rose foam',
     swatch: 'linear-gradient(#f5d3da 0 26%, #eedfd6 26% 60%, #3a2214 60%)',
     intro: 'rose is a small amount of a big thing. we\u2019ll go easy.',
@@ -79,7 +76,7 @@ export const RECIPES = [
         color: '#b8506e', top: '#d6708c', amount: 0.07, holdMs: 1000,
         say: 'rose syrup, just enough. any more and it tastes like a drawer.' },
       { kind: 'pour', id: 'milk', label: 'hold to pour the milk',
-        color: '#eedfd6', top: '#f8efe9', amount: 0.51, holdMs: 1800,
+        color: '#eedfd6', top: '#f8efe9', amount: 0.59, holdMs: 1900,
         say: 'the milk turns it the colour of the inside of a shell.' },
       { kind: 'ice', label: 'hold to add ice', count: 4,
         say: 'ice, four. they bob, then agree on where to sit.' },

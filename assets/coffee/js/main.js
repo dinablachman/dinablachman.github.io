@@ -1,5 +1,5 @@
 import { RECIPES } from './recipes.js';
-import { Drink, W, H } from './drink.js';
+import { Drink, H, GLASS_FOOT } from './drink.js';
 import { Dialog } from './dialog.js';
 
 const root = document.getElementById('coffee');
@@ -36,7 +36,7 @@ function buildMenu() {
       <span class="menu__swatch" style="--swatch:${r.swatch}" aria-hidden="true"></span>
       <span>
         <span class="menu__name">${r.name}</span>
-        <span class="menu__desc">${r.sub} · ${r.blurb}</span>
+        <span class="menu__desc">${r.blurb}</span>
       </span>
       <span class="menu__star" aria-hidden="true">★</span>`;
     b.addEventListener('click', () => order(r));
@@ -70,29 +70,30 @@ function loadArt() {
 // ---------------------------------------------------------------- stage fit
 
 let baseScale = 1;
+let availH = 600;
 let stagePose = 'counter';   // counter | present | sip
 
 function fitStage() {
   const hud = parseFloat(getComputedStyle(root).getPropertyValue('--hud-h')) || 168;
-  const availH = window.innerHeight - hud - 8;
+  availH = window.innerHeight - hud - 8;
   const availW = window.innerWidth;
   baseScale = Math.min(availH / H, availW / 520);
   applyPose(true);
 }
 
-// transform-origin is the stage centre, so translateY has to lift the scaled
-// stage back up so its top sits at the viewport top (plus any extra offset).
-function pose(scale, extraY, rot) {
-  const ty = -(H * (1 - scale)) / 2 + extraY;
+// transform-origin is the stage centre. Pin the glass foot (canvas y = GLASS_FOOT)
+// to a screen line so scaling toward the viewer never pushes it under the HUD.
+function pose(scale, footY, rot) {
+  const ty = footY - H / 2 - (GLASS_FOOT - H / 2) * scale;
   return `translate(-50%, ${ty.toFixed(1)}px) rotate(${rot}deg) scale(${scale.toFixed(4)})`;
 }
 
 function applyPose(instant = false) {
   const s = baseScale;
   let t;
-  if (stagePose === 'present') t = pose(s * 1.16, H * s * 0.06, 0);
-  else if (stagePose === 'sip') t = pose(s * 1.2, H * s * 0.02, -4);
-  else t = pose(s, 0, 0);
+  if (stagePose === 'present') t = pose(s * 1.14, availH + availH * 0.015, 0);
+  else if (stagePose === 'sip') t = pose(s * 1.18, availH - availH * 0.02, -4);
+  else t = pose(s, availH - 4, 0);
   if (instant) el.stage.classList.add('is-instant');
   el.stage.style.transform = t;
   if (instant) requestAnimationFrame(() => el.stage.classList.remove('is-instant'));
@@ -237,6 +238,7 @@ async function order(recipe) {
   applyPose();
   await sleep(600);
   await dialog.say(recipe.empty, { tag: recipe.name, hold: 300 });
+  el.hold.hidden = true;
   el.again.hidden = false;
 }
 
@@ -244,6 +246,7 @@ el.again.addEventListener('click', () => {
   running = false;
   el.counter.classList.remove('is-live');
   el.again.hidden = true;
+  el.hold.hidden = false;
   dialog.hide();
   setTimeout(() => {
     el.counter.hidden = true;
