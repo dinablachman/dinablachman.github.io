@@ -105,9 +105,13 @@ window.addEventListener('resize', fitStage);
 
 const hold = { down: false, enabled: false };
 
+// The button is never truly `disabled`: a disabled control swallows the
+// pointerup that ends a hold, which can leave state stuck. Instead we flag it
+// off and ignore input.
 function setHold(enabled, label) {
   hold.enabled = enabled;
-  el.hold.disabled = !enabled;
+  el.hold.classList.toggle('is-off', !enabled);
+  el.hold.setAttribute('aria-disabled', String(!enabled));
   if (label) el.holdLabel.textContent = label;
   if (!enabled) { hold.down = false; el.hold.classList.remove('is-holding'); }
   setRing(0);
@@ -116,20 +120,23 @@ function setRing(p) { el.holdRing.style.setProperty('--p', p.toFixed(3)); }
 
 function onDown(e) {
   if (!hold.enabled) return;
-  if (e.pointerType) el.hold.setPointerCapture?.(e.pointerId);
+  if (e && e.preventDefault) e.preventDefault();
   hold.down = true;
   el.hold.classList.add('is-holding');
 }
 function onUp() {
+  if (!hold.down) return;
   hold.down = false;
   el.hold.classList.remove('is-holding');
 }
 el.hold.addEventListener('pointerdown', onDown);
-el.hold.addEventListener('pointerup', onUp);
-el.hold.addEventListener('pointercancel', onUp);
-el.hold.addEventListener('lostpointercapture', onUp);
+// release anywhere ends the hold, so dragging off the button is safe
+window.addEventListener('pointerup', onUp);
+window.addEventListener('pointercancel', onUp);
+window.addEventListener('blur', onUp);
+document.addEventListener('visibilitychange', () => { if (document.hidden) onUp(); });
 el.hold.addEventListener('keydown', e => {
-  if ((e.key === ' ' || e.key === 'Enter') && hold.enabled) { e.preventDefault(); if (!hold.down) onDown({}); }
+  if ((e.key === ' ' || e.key === 'Enter') && hold.enabled) { e.preventDefault(); if (!hold.down) onDown(); }
 });
 el.hold.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') onUp(); });
 el.hold.addEventListener('contextmenu', e => e.preventDefault());
