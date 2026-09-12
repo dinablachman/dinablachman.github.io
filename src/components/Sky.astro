@@ -1,0 +1,236 @@
+---
+/**
+ * Animated sky — a port of the feralui "Sky" mesh field.
+ *
+ * Four tones (lightest crests the clouds, darkest floods the deep) drawn by a
+ * WebGL fragment shader: domain-warped fbm, drifting upward ("wind: up").
+ * Parameters mirror the feralui preset: scale 45%, warp 50%, wind 40%, speed 22%.
+ * A 256px grain tile sits on top at 20% (overlay). Stars fade in for night.
+ *
+ * Persists across client-side navigation. Falls back to the static oklab
+ * gradient when WebGL is unavailable. Renders at half resolution, ~30fps,
+ * pauses when hidden, and stops on prefers-reduced-motion.
+ */
+---
+
+<div class="sky" aria-hidden="true" transition:persist="sky">
+  <canvas class="sky-canvas" data-sky></canvas>
+  <svg class="stars" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="#fff">
+    <circle cx="88" cy="72" r="1.2" opacity=".9" /><circle cx="210" cy="140" r=".9" opacity=".6" />
+    <circle cx="320" cy="48" r="1.5" opacity=".95" /><circle cx="455" cy="110" r=".8" opacity=".5" />
+    <circle cx="540" cy="180" r="1.1" opacity=".7" /><circle cx="640" cy="90" r=".9" opacity=".6" />
+    <circle cx="760" cy="150" r="1.4" opacity=".9" /><circle cx="860" cy="60" r=".8" opacity=".55" />
+    <circle cx="940" cy="200" r="1" opacity=".7" /><circle cx="1030" cy="96" r="1.3" opacity=".85" />
+    <circle cx="1120" cy="160" r=".8" opacity=".5" /><circle cx="1200" cy="44" r="1.1" opacity=".75" />
+    <circle cx="1290" cy="128" r="1.6" opacity=".95" /><circle cx="1380" cy="210" r=".9" opacity=".6" />
+    <circle cx="150" cy="260" r=".8" opacity=".5" /><circle cx="60" cy="340" r="1.2" opacity=".8" />
+    <circle cx="1100" cy="270" r="1.2" opacity=".8" /><circle cx="1240" cy="330" r=".8" opacity=".5" />
+    <circle cx="1340" cy="400" r="1" opacity=".7" /><circle cx="1160" cy="440" r=".9" opacity=".55" />
+    <circle cx="700" cy="30" r=".8" opacity=".5" /><circle cx="1420" cy="70" r=".9" opacity=".6" />
+    <circle cx="30" cy="180" r=".8" opacity=".5" /><circle cx="120" cy="520" r="1" opacity=".6" />
+    <circle cx="1380" cy="560" r="1.3" opacity=".8" /><circle cx="200" cy="700" r=".8" opacity=".45" />
+    <circle cx="1300" cy="760" r=".9" opacity=".5" /><circle cx="400" cy="820" r="1.1" opacity=".6" />
+    <circle cx="980" cy="860" r=".8" opacity=".5" /><circle cx="620" cy="700" r=".9" opacity=".45" />
+  </svg>
+  <div class="grain"></div>
+</div>
+
+<style>
+  .sky {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    isolation: isolate;
+    /* fallback (also what shows for the first frame before the shader paints) */
+    background: linear-gradient(135deg, var(--sky-1) 12.5%, var(--sky-2) 37.5%, var(--sky-3) 62.5%, var(--sky-4) 87.5%);
+    background: linear-gradient(135deg in oklab, var(--sky-1) 12.5%, var(--sky-2) 37.5%, var(--sky-3) 62.5%, var(--sky-4) 87.5%);
+    transition: background var(--dur) var(--ease);
+  }
+  .sky-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .stars {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: var(--stars-opacity);
+    transition: opacity 300ms var(--ease);
+    pointer-events: none;
+  }
+  .grain {
+    position: absolute;
+    inset: 0;
+    background: url('/noise.png') repeat;
+    background-size: 256px 256px;
+    image-rendering: pixelated;
+    mix-blend-mode: overlay;
+    opacity: 0.2;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // Sky shader
+  // ---------------------------------------------------------------------------
+  const VERT = `
+attribute vec2 a;
+void main(){ gl_Position = vec4(a, 0.0, 1.0); }`;
+
+  const FRAG = `
+precision highp float;
+uniform vec2  u_res;
+uniform float u_time;
+uniform vec3  u_c1, u_c2, u_c3, u_c4;   /* lightest .. darkest */
+uniform float u_scale, u_warp, u_wind, u_speed;
+
+float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash(i), b = hash(i + vec2(1.0, 0.0)), c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+  for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
+  return v;
+}
+void main(){
+  vec2 uv = gl_FragCoord.xy / u_res;
+  vec2 p  = uv; p.x *= u_res.x / u_res.y;
+
+  float t = u_time * u_speed;
+  /* wind: up — the field advects upward */
+  p.y -= t * u_wind * 0.35;
+  p *= 1.2 + u_scale * 2.4;
+
+  /* domain warp = "warp" slider */
+  vec2 q = vec2(fbm(p + vec2(0.0, t * 0.25)), fbm(p + vec2(5.2, 1.3) + t * 0.18));
+  float f = fbm(p + u_warp * 3.0 * q);
+
+  /* deep at the top, crests toward the bottom (matches the preset preview) */
+  float g = f * 0.9 + (1.0 - uv.y) * 0.42 - 0.18;
+
+  vec3 col = mix(u_c4, u_c3, smoothstep(0.05, 0.42, g));
+  col = mix(col, u_c2, smoothstep(0.38, 0.68, g));
+  col = mix(col, u_c1, smoothstep(0.62, 0.95, g));
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+  // feralui preset: scale 45%, warp 50%, wind 40%, speed 22%
+  const PRESET = { scale: 0.45, warp: 0.5, wind: 0.4, speed: 0.22 };
+
+  function cssColor(name: string): [number, number, number] {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const m = v.match(/^#([0-9a-f]{6})$/i);
+    if (!m) return [0.5, 0.7, 1];
+    const n = parseInt(m[1], 16);
+    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  }
+
+  function start(canvas: HTMLCanvasElement) {
+    if ((canvas as any).__sky) return;
+    const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
+    if (!gl) return; // CSS gradient fallback stays visible
+    (canvas as any).__sky = true;
+
+    const compile = (type: number, src: string) => {
+      const s = gl.createShader(type)!;
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const a = gl.getAttribLocation(prog, 'a');
+    gl.enableVertexAttribArray(a);
+    gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
+
+    const U = (n: string) => gl.getUniformLocation(prog, n);
+    const uRes = U('u_res'), uTime = U('u_time');
+    const uC = [U('u_c1'), U('u_c2'), U('u_c3'), U('u_c4')];
+    gl.uniform1f(U('u_scale'), PRESET.scale);
+    gl.uniform1f(U('u_warp'), PRESET.warp);
+    gl.uniform1f(U('u_wind'), PRESET.wind);
+    gl.uniform1f(U('u_speed'), PRESET.speed);
+
+    // colors follow the theme tokens; eased when the theme flips
+    let cur = [cssColor('--sky-1'), cssColor('--sky-2'), cssColor('--sky-3'), cssColor('--sky-4')];
+    let target = cur.map((c) => [...c] as [number, number, number]);
+    const readTheme = () => {
+      target = [cssColor('--sky-1'), cssColor('--sky-2'), cssColor('--sky-3'), cssColor('--sky-4')];
+    };
+    new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.max(1, Math.floor((window.innerWidth * dpr) / 2));
+      const h = Math.max(1, Math.floor((window.innerHeight * dpr) / 2));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        gl.viewport(0, 0, w, h);
+      }
+      gl.uniform2f(uRes, w, h);
+    };
+    resize();
+    addEventListener('resize', resize, { passive: true });
+
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const FRAME = 1000 / 30;
+    let last = 0;
+    let t0 = performance.now();
+
+    const draw = (now: number) => {
+      // ease colors toward the current theme
+      let settled = true;
+      for (let i = 0; i < 4; i++)
+        for (let k = 0; k < 3; k++) {
+          const d = target[i][k] - cur[i][k];
+          if (Math.abs(d) > 0.002) settled = false;
+          cur[i][k] += d * 0.3; // ~0.25s to settle at 30fps, inside the theme crossfade
+        }
+      for (let i = 0; i < 4; i++) gl.uniform3f(uC[i], cur[i][0], cur[i][1], cur[i][2]);
+      gl.uniform1f(uTime, (now - t0) / 1000);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      return settled;
+    };
+
+    const loop = (now: number) => {
+      if (document.hidden) return; // resumes on visibilitychange
+      if (now - last >= FRAME) {
+        last = now;
+        const settled = draw(now);
+        if (reduced.matches && settled) return; // static frame for reduced motion
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) requestAnimationFrame(loop);
+    });
+    reduced.addEventListener('change', () => requestAnimationFrame(loop));
+  }
+
+  const boot = () => {
+    const c = document.querySelector<HTMLCanvasElement>('[data-sky]');
+    if (c) start(c);
+  };
+  boot();
+  document.addEventListener('astro:page-load', boot);
+</script>

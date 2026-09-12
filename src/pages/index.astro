@@ -1,0 +1,48 @@
+---
+import Base from '../layouts/Base.astro';
+import { fmtMonth } from '../lib/format';
+const updated = fmtMonth(new Date());
+---
+
+<Base title="dina blachman" current="now">
+  <div class="pane-label">
+    <span class="mono">now · {updated}</span>
+  </div>
+
+  <div class="now">
+    <p class="lede serif">writing my CS thesis on human–AI collaboration.</p>
+    <p>
+      Campus Lead at <a class="u" href="https://cursor.com/campus-leads" target="_blank" rel="noopener">SpaceXAI</a> · Community
+      Lead at <a class="u" href="https://www.adicu.com/" target="_blank" rel="noopener">ADI</a>
+    </p>
+    <p class="muted">recently: SWE intern at J.P. Morgan Chase — knowledge management for AI agents.</p>
+  </div>
+</Base>
+
+<style>
+  .now {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* breathing room under the last line, matching the pane's top padding */
+    padding-bottom: 28px;
+  }
+  .now p {
+    margin: 0;
+  }
+  .lede {
+    font-size: 26px;
+    line-height: 1.15;
+  }
+  @media (max-width: 720px) {
+    .lede {
+      font-size: 22px;
+    }
+    .now p {
+      font-size: 15px;
+    }
+    .now {
+      padding-bottom: 20px;
+    }
+  }
+</style>

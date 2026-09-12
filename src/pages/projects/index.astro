@@ -1,0 +1,48 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { publicFile } from '../../lib/format';
+
+const projects = (await getCollection('projects')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const pub = publicFile;
+---
+
+<Base title="projects" current="projects">
+  <div class="pane-label">
+    <span class="mono">projects · {projects.length}</span>
+    <span class="mono-plain hide-m">click for write-up</span>
+  </div>
+
+  <ul class="rows">
+    {
+      projects.map((p) => {
+        const media = pub(p.data.gif) ?? pub(p.data.thumb) ?? pub(p.data.poster);
+        return (
+        <li>
+          <a class="row" href={`/projects/${p.id}`}>
+            <span class="row-thumb">{media && <img src={media} alt="" loading="lazy" />}</span>
+            <span class="row-body">
+              <span class="row-title">{p.data.title}</span>
+              <span class="row-sub">
+                {p.data.subtitle}
+                {p.data.stack.length ? ` · ${p.data.stack.slice(0, 3).join(', ').toLowerCase()}` : ''}
+              </span>
+            </span>
+            <span class="row-meta">{p.data.date.getFullYear()}</span>
+          </a>
+        </li>
+        );
+      })
+    }
+  </ul>
+</Base>
+
+<style>
+  .row-thumb img {
+    filter: saturate(0.85);
+    transition: filter 200ms;
+  }
+  .row:hover .row-thumb img {
+    filter: none;
+  }
+</style>

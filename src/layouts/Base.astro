@@ -1,0 +1,415 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Sky from '../components/Sky.astro';
+import Nav from '../components/Nav.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** which nav item is active */
+  current: 'now' | 'about' | 'projects' | 'blog' | null;
+  /** wider reading gutters (write-ups) */
+  wide?: boolean;
+}
+
+const {
+  title,
+  description = 'dina blachman — cs & philosophy at columbia. small useful tools, generative models, human agency.',
+  current,
+  wide = false,
+} = Astro.props;
+
+/** home is the small window; every other tab shares one larger size */
+const size = current === 'now' ? 'small' : 'large';
+
+const siteName = 'dina blachman';
+const pageTitle = title === siteName ? title : `${title} · ${siteName}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#80b3ff" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+    <script is:inline>
+      // Apply saved theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'light';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
+    <ClientRouter />
+  </head>
+  <body>
+    <Sky />
+
+    <div class="corner-tag mono" transition:persist="corner">
+      <span data-local-time>new york</span>
+    </div>
+
+    <div class="frame">
+      <!--
+        The window persists across client-side navigations (transition:persist) so its
+        size change is a plain CSS transition. The script below swaps the nav state and
+        pane content from the incoming document.
+      -->
+      <main class="window" data-size={size} transition:persist="window">
+        <header class:list={['window-head', size === 'small' ? 'full' : 'compact']}>
+          {
+            size === 'small' ? (
+              <>
+                <div class="head-top">
+                  <span class="mono">cs &amp; philosophy · barnard ’27</span>
+                  <ThemeToggle />
+                </div>
+                <h1 class="head-title">
+                  hi, i’m <span class="typed" data-typed="Dina Blachman">Dina Blachman</span>
+                </h1>
+                <p class="head-summary">
+                  i build small useful tools and think about how generative models can be trained to make life more
+                  fulfilling — with human creativity and agency at the forefront.
+                </p>
+              </>
+            ) : (
+              <div class="head-top">
+                <a class="head-title" href="/">Dina Blachman</a>
+                <div class="head-right">
+                  <ThemeToggle />
+                </div>
+              </div>
+            )
+          }
+          <Nav current={current} />
+        </header>
+
+        <section class:list={['pane', { wide }]}>
+          <slot />
+        </section>
+
+        {
+          size === 'small' && (
+            <footer class="window-foot">
+              reach out by email <a class="u" href="mailto:db3654@barnard.edu">db3654@barnard.edu</a>, or find me on{' '}
+              <a class="u" href="https://github.com/dinablachman" target="_blank" rel="noopener">github</a> and{' '}
+              <a class="u" href="https://www.linkedin.com/in/dinablachman/" target="_blank" rel="noopener">linkedin</a>.
+            </footer>
+          )
+        }
+      </main>
+    </div>
+
+    <script>
+      // Theme toggle — delegated so it survives client-side navigation.
+      // Wrapped in a view transition for a uniform crossfade; CSS transitions on
+      // html.theming carry any element the snapshot misses (e.g. the live canvas).
+      document.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('[data-theme-toggle]');
+        if (!btn) return;
+        const root = document.documentElement;
+        const next = root.getAttribute('data-theme') === 'night' ? 'light' : 'night';
+        const apply = () => {
+          root.setAttribute('data-theme', next);
+          try {
+            localStorage.setItem('theme', next);
+          } catch {}
+        };
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const svt = (document as any).startViewTransition?.bind(document);
+        if (svt && !reduced) {
+          // one 280ms crossfade of the whole page; colors flip instantly underneath
+          root.classList.add('theming');
+          svt(apply).finished.finally(() => root.classList.remove('theming'));
+        } else {
+          apply(); // no API / reduced motion: instant flip
+        }
+      });
+
+      // Keep theme across view transitions (Astro re-renders <html> attrs from the new doc).
+      document.addEventListener('astro:before-swap', (e) => {
+        const t = document.documentElement.getAttribute('data-theme');
+        if (t) (e as any).newDocument.documentElement.setAttribute('data-theme', t);
+      });
+
+      // --- window swap ---------------------------------------------------------
+      // FLIP: layout jumps to the new size instantly; the visible motion is a
+      // compositor-only transform from the old box to the new one, with the
+      // header/pane counter-scaled so text never stretches (Paul Lewis / Chrome
+      // "performant expand & collapse"; same approach as Motion's `layout`).
+
+      // spring → linear() easing (critically damped: fast start, no overshoot)
+      const springEasing = (() => {
+        const stiffness = 210, damping = 30, mass = 1, dur = 0.6;
+        let x = 0, v = 0;
+        const pts: number[] = [];
+        const dt = 1 / 240;
+        const N = Math.round(dur / dt);
+        for (let i = 0; i <= N; i++) {
+          if (i % 4 === 0) pts.push(+x.toFixed(4));
+          const a = (-stiffness * (x - 1) - damping * v) / mass;
+          v += a * dt;
+          x += v * dt;
+        }
+        pts[pts.length - 1] = 1;
+        const ok = typeof CSS !== 'undefined' && CSS.supports?.('animation-timing-function', 'linear(0, 1)');
+        return ok ? `linear(${pts.join(',')})` : 'cubic-bezier(0.32, 0.72, 0, 1)';
+      })();
+      const FLIP_MS = 600;
+      // incoming content reveal, locked to the FLIP clock: hidden for the first 20%
+      // (box in fast motion), linear fade to 75%, then hold while the spring settles.
+      const CONTENT_KEYFRAMES: Keyframe[] = [
+        { opacity: 0, offset: 0 },
+        { opacity: 0, offset: 0.2 },
+        { opacity: 1, offset: 0.75 },
+        { opacity: 1, offset: 1 },
+      ];
+
+      let first: DOMRect | null = null;
+      let sameSize = false;
+
+      document.addEventListener('astro:before-preparation', () => {
+        const win = document.querySelector<HTMLElement>('.window');
+        if (!win) return;
+        // if a resize is mid-flight, measure the *visual* box and cancel it
+        first = win.getBoundingClientRect();
+        win.getAnimations().forEach((a) => a.cancel());
+        win.querySelectorAll('.window-head, .pane, .window-foot').forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+        // old content stays visible until the swap (prefetch makes the wait ~0ms anyway)
+      });
+
+      function flip(win: HTMLElement) {
+        const content = Array.from(win.querySelectorAll<HTMLElement>('.window-head, .pane, .window-foot'));
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // same-size tabs (about ↔ projects ↔ blog): no box motion, no header change —
+        // just a quick, unheld fade on the pane text so it reads as "text changed"
+        if (sameSize) {
+          first = null;
+          placeDot(reduced); // slide the dot to the new tab
+          const pane = win.querySelector<HTMLElement>('.pane');
+          if (pane) {
+            if (!reduced) pane.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: 'ease-out', fill: 'none' });
+            pane.classList.remove('is-leaving');
+          }
+          return;
+        }
+
+        // header was replaced: the new nav's dot starts in place
+        placeDot(true);
+
+        if (!first || reduced) {
+          first = null;
+          content.forEach((el) => el.classList.remove('is-leaving'));
+          return;
+        }
+
+        const last = win.getBoundingClientRect();
+        const sx = first.width / last.width;
+        const sy = first.height / last.height;
+        const dx = first.left + first.width / 2 - (last.left + last.width / 2);
+        const dy = first.top + first.height / 2 - (last.top + last.height / 2);
+        const resizing = Math.abs(sx - 1) >= 0.002 || Math.abs(sy - 1) >= 0.002 || Math.abs(dx) >= 0.5 || Math.abs(dy) >= 0.5;
+        const opts: KeyframeAnimationOptions = { duration: FLIP_MS, easing: springEasing, fill: 'none' };
+
+        if (resizing) {
+          const cx = last.left + last.width / 2;
+          const cy = last.top + last.height / 2;
+          // measure children BEFORE starting the parent animation (transforms affect rects)
+          const origins = content.map((el) => {
+            const r = el.getBoundingClientRect();
+            return `${cx - r.left}px ${cy - r.top}px`;
+          });
+          const radius = parseFloat(getComputedStyle(win).borderTopLeftRadius) || 24;
+
+          // the box: old → new, radius corrected so corners stay constant throughout
+          win.animate(
+            [
+              { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, borderRadius: `${radius / sx}px / ${radius / sy}px` },
+              { transform: 'none', borderRadius: `${radius}px` },
+            ],
+            opts,
+          );
+          // children: counter-scale about the same point so content isn't stretched
+          content.forEach((el, i) => {
+            el.style.transformOrigin = origins[i];
+            el.animate([{ transform: `scale(${1 / sx}, ${1 / sy})` }, { transform: 'none' }], opts);
+          });
+        }
+
+        // reveal on the same clock as the box (linear so it doesn't front-load)
+        content.forEach((el) => {
+          el.animate(CONTENT_KEYFRAMES, { duration: FLIP_MS, easing: 'linear', fill: 'none' });
+          el.classList.remove('is-leaving');
+        });
+        first = null;
+      }
+
+      // The window element is persisted, so Astro won't touch its contents.
+      // Pull the new nav + pane out of the incoming document and resize the box.
+      document.addEventListener('astro:before-swap', (e) => {
+        const nd: Document = (e as any).newDocument;
+        const win = document.querySelector<HTMLElement>('.window');
+        const newWin = nd.querySelector<HTMLElement>('.window');
+        if (!win || !newWin) return;
+
+        sameSize = win.dataset.size === newWin.dataset.size;
+        win.dataset.size = newWin.dataset.size;
+
+        const head = win.querySelector<HTMLElement>('.window-head');
+        const newHead = nd.querySelector<HTMLElement>('.window-head');
+        if (head && newHead) {
+          if (sameSize) {
+            // same window: header is identical — only move the active-nav dot
+            const links = head.querySelectorAll<HTMLElement>('.nav a');
+            const newLinks = newHead.querySelectorAll<HTMLElement>('.nav a');
+            links.forEach((a, i) => {
+              const cur = newLinks[i]?.getAttribute('aria-current');
+              if (cur) a.setAttribute('aria-current', cur);
+              else a.removeAttribute('aria-current');
+            });
+          } else {
+            // different window: header changes (full on home, compact elsewhere)
+            head.className = newHead.className + ' is-leaving';
+            head.replaceChildren(...Array.from(newHead.childNodes).map((n) => document.adoptNode(n)));
+          }
+        }
+
+        const pane = win.querySelector<HTMLElement>('.pane');
+        const newPane = nd.querySelector<HTMLElement>('.pane');
+        if (pane && newPane) {
+          pane.className = newPane.className + ' is-leaving';
+          pane.replaceChildren(...Array.from(newPane.childNodes).map((n) => document.adoptNode(n)));
+          pane.scrollTop = 0;
+        }
+
+        // glass footer exists only on home: add / remove it with the size change
+        const foot = win.querySelector<HTMLElement>('.window-foot');
+        const newFoot = nd.querySelector<HTMLElement>('.window-foot');
+        if (foot && !newFoot) foot.remove();
+        else if (newFoot && !foot) {
+          const f = document.adoptNode(newFoot) as HTMLElement;
+          f.classList.add('is-leaving');
+          win.append(f);
+        }
+      });
+
+      document.addEventListener('astro:after-swap', () => {
+        const win = document.querySelector<HTMLElement>('.window');
+        if (win) flip(win); // layout is already at the new size here; flip() also reveals content
+      });
+
+      // --- sliding nav underline ---------------------------------------------------
+      // One indicator per nav, translated/scaled to the active link. `jump` places
+      // it without animating (first paint / after the header is replaced).
+      function placeDot(jump = false) {
+        const ul = document.querySelector<HTMLElement>('.nav ul');
+        const dot = ul?.querySelector<HTMLElement>('.nav-dot');
+        if (!ul || !dot) return;
+        const active = ul.querySelector<HTMLElement>('a[aria-current="page"]');
+        if (!active) {
+          dot.classList.remove('on');
+          return;
+        }
+        const a = active.getBoundingClientRect();
+        const x = a.left - ul.getBoundingClientRect().left;
+        const s = a.width / 100; // base width is 100px
+        const set = () => {
+          dot.style.setProperty('--x', `${x}px`);
+          dot.style.setProperty('--s', `${s}`);
+          dot.classList.add('on');
+        };
+        if (jump) {
+          dot.classList.add('jump');
+          set();
+          void dot.offsetWidth; // flush so the next change transitions
+          dot.classList.remove('jump');
+        } else {
+          set();
+        }
+      }
+      placeDot(true);
+      addEventListener('resize', () => placeDot(true), { passive: true });
+
+      // --- typewriter on the home heading (once per session, idle caret after) ---
+      const TYPED_FLAG = 'typedTitleOnce';
+      function typeTitle() {
+        const el = document.querySelector<HTMLElement>('.window-head .typed');
+        if (!el || el.dataset.done) return;
+        el.dataset.done = '1';
+        const full = el.dataset.typed || el.textContent || '';
+        const caret = document.createElement('span');
+        caret.className = 'caret';
+        caret.setAttribute('aria-hidden', 'true');
+
+        let already = false;
+        try {
+          already = sessionStorage.getItem(TYPED_FLAG) === '1';
+        } catch {}
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (already || reduced) {
+          el.textContent = full; // no caret on repeat visits
+          return;
+        }
+
+        // reserve the final width so the heading doesn't reflow while typing
+        el.style.display = 'inline-block';
+        el.style.minWidth = `${el.getBoundingClientRect().width}px`;
+        el.textContent = '';
+        el.append(caret);
+        caret.classList.add('typing');
+        let i = 0;
+        const tick = () => {
+          if (!el.isConnected) return;
+          i++;
+          el.textContent = full.slice(0, i);
+          el.append(caret);
+          if (i < full.length) setTimeout(tick, 70 + Math.random() * 40);
+          else {
+            // done: hold a beat, then fade the caret out and remove it
+            caret.classList.remove('typing');
+            setTimeout(() => {
+              caret.classList.add('fade');
+              caret.addEventListener('transitionend', () => caret.remove(), { once: true });
+            }, 700);
+            try {
+              sessionStorage.setItem(TYPED_FLAG, '1');
+            } catch {}
+          }
+        };
+        setTimeout(tick, 320);
+      }
+      typeTitle();
+      document.addEventListener('astro:after-swap', () => setTimeout(typeTitle, 200));
+
+      // Local time tag, updated each minute.
+      const tick = () => {
+        const el = document.querySelector('[data-local-time]');
+        if (!el) return;
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        el.textContent = `new york · ${hh}:${mm}`;
+      };
+      tick();
+      setInterval(tick, 30_000);
+    </script>
+  </body>
+</html>
+

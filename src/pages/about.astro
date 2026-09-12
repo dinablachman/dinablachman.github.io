@@ -1,0 +1,173 @@
+---
+import Base from '../layouts/Base.astro';
+
+// uniform 4:3 tiles; `focus` is the object-position used when cropping
+const photos = [
+  { src: '/assets/images/gallery/01.jpg', alt: 'ILLIT on stage at a concert in LA', focus: '50% 55%' },
+  { src: '/assets/images/gallery/02.jpg', alt: 'friends building mechanical keyboards on the floor', focus: '50% 45%' },
+  { src: '/assets/images/gallery/03.jpg', alt: 'group photo with friends in a living room', focus: '50% 40%' },
+  { src: '/assets/images/gallery/04.jpg', alt: 'beach at dusk from the boardwalk', focus: '50% 60%' },
+  { src: '/assets/images/gallery/05.jpg', alt: 'The Outsiders on Broadway, from the mezzanine', focus: '50% 55%' },
+  { src: '/assets/images/gallery/06.jpg', alt: 'Barnard bear mascot with pom-poms on campus', focus: '50% 60%' },
+  { src: '/assets/images/gallery/07.jpg', alt: 'sunset over the hills from Griffith Park', focus: '50% 45%' },
+];
+---
+
+<Base title="about" current="about">
+  <div class="about">
+    <div class="photo">
+      <img src="/assets/images/dina.jpg" alt="Dina in a white dress in front of a garden fence" width="820" height="1024" loading="eager" />
+    </div>
+
+    <div class="bio">
+      <span class="mono muted">about</span>
+      <p>
+        senior at Columbia studying CS &amp; Philosophy. i care about how generative models get built and trained — and about
+        keeping human creativity and agency at the front of that story, not as an afterthought.
+      </p>
+      <p>
+        this summer i was a SWE intern at J.P. Morgan Chase working on knowledge management for AI agents. before that i
+        worked with <a class="u" href="https://www.cs.columbia.edu/~smara/" target="_blank" rel="noopener">Prof. Muresan</a> on a
+        human–AI collaboration framework for detecting prosecutorial misconduct in appellate cases (<a
+          class="u"
+          href="/assets/improperconduct.pdf"
+          target="_blank"
+          rel="noopener">poster</a
+        >), and interned on the API team at <a class="u" href="https://www.carson.live/" target="_blank" rel="noopener">Carson</a>.
+      </p>
+      <p class="muted">
+        off the clock: reviving dead fan pages from the Wayback Machine, arguing about free will, and making my friends guess
+        whether the video is real.
+      </p>
+    </div>
+  </div>
+
+  <div class="strip-wrap">
+    <ul class="strip" aria-label="photos">
+      {
+        photos.map((p) => (
+          <li>
+            <img src={p.src} alt={p.alt} width="900" height="675" loading="lazy" decoding="async" style={`object-position:${p.focus}`} />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+</Base>
+
+<style>
+  .about {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+  }
+  .photo {
+    position: relative;
+    width: 220px;
+    aspect-ratio: 4 / 5;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: linear-gradient(160deg, var(--sky-1) 0%, var(--sky-2) 60%, var(--sky-3) 100%);
+    overflow: hidden;
+  }
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 20%;
+  }
+  .bio {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .bio p {
+    margin: 0;
+  }
+  /* horizontal photo strip: uniform 4:3 tiles, snap scrolling, soft edge fades */
+  .strip-wrap {
+    position: relative;
+    /* anchor to the bottom of the pane; at least 24px clear of the bio above */
+    margin: auto -32px 0;
+    padding-top: 24px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  }
+  .strip {
+    list-style: none;
+    margin: 0;
+    padding: 0 32px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 32px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .strip::-webkit-scrollbar {
+    display: none;
+  }
+  .strip li {
+    flex: 0 0 168px;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--paper-soft);
+    scroll-snap-align: start;
+  }
+  .strip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  @media (max-width: 720px) {
+    /* photo floats left so the bio wraps beneath it (matches the mobile mock) */
+    .about {
+      display: block;
+    }
+    .photo {
+      float: left;
+      width: 128px;
+      margin: 0 14px 6px 0;
+    }
+    .about::after {
+      content: '';
+      display: block;
+      clear: both;
+    }
+    .bio {
+      display: block; /* floats don't wrap inside flex; use flow layout on mobile */
+    }
+    .bio > * + * {
+      margin-top: 8px;
+    }
+    .bio .mono {
+      display: block;
+    }
+    .bio {
+      font-size: 14px;
+      line-height: 1.5;
+      gap: 8px;
+    }
+    .strip-wrap {
+      margin: auto -18px 0;
+      padding-top: 18px;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+    }
+    .strip {
+      padding: 0 18px;
+      scroll-padding-inline: 18px;
+      gap: 8px;
+    }
+    .strip li {
+      flex: 0 0 132px;
+    }
+  }
+</style>

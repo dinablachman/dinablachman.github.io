@@ -1,0 +1,85 @@
+/* Design tokens — mirrors the Paper file "dina portfolio — v1 mockups" */
+
+:root {
+  /* type */
+  --font-display: 'EB Garamond', Garamond, Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 22px;
+  --text-2xl: 34px;
+  --text-4xl: 48px;
+
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.08em;
+  --leading-tight: 1.05;
+  --leading-normal: 1.55;
+
+  /* spacing / radius */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-11: 44px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1); /* fast start, soft landing */
+  --dur: 350ms;
+
+  /* sky palette (feralui "blue sky" preset) */
+  --sky-1: #e6f2ff;
+  --sky-2: #b3d9ff;
+  --sky-3: #80b3ff;
+  --sky-4: #6699e6;
+  --stars-opacity: 0;
+
+  /* surfaces */
+  --glass: rgba(255, 255, 255, 0.42);
+  --glass-line: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 24px 64px rgba(43, 74, 140, 0.14);
+  --paper: #ffffff;
+  --paper-soft: #f6f8fb;
+  --line: #dde3ec;
+
+  /* text */
+  --ink: #171717;
+  --ink-2: #2b3445;
+  --ink-3: #3b4457;
+  --muted: #6b7280;
+  --accent: #4f86e8;
+  --on-sky: #2b3445;
+}
+
+:root[data-theme='night'] {
+  /* night tones for the sky shader: lightest .. darkest */
+  --sky-1: #2a3d6b;
+  --sky-2: #1b2a4a;
+  --sky-3: #0f1730;
+  --sky-4: #05070f;
+  --stars-opacity: 1;
+
+  --glass: rgba(255, 255, 255, 0.08);
+  --glass-line: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  --paper: #111a30;
+  --paper-soft: #16213a;
+  --line: #22304f;
+
+  --ink: #e8eef8;
+  --ink-2: #c9d3e8;
+  --ink-3: #aeb9d1;
+  --muted: #8e9ab5;
+  --accent: #80b3ff;
+  --on-sky: #aeb9d1;
+}

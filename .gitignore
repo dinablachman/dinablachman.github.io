@@ -1,6 +1,21 @@
+# astro
+dist/
+.astro/
+node_modules/
+npm-debug.log*
+
+# local tooling
+.cursor/
+.tmp-tools/
+.home/
+
+# legacy jekyll (kept ignored in case of stale local dirs)
 _site
 .sass-cache
 .jekyll-cache
 .jekyll-metadata
 vendor
 .bundle
+.gems
+
+.DS_Store

@@ -1,0 +1,179 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { fmtDate, readingTime, excerpt } from '../../lib/format';
+
+type Entry = {
+  href: string;
+  title: string;
+  date: Date;
+  kind: 'essay' | 'project';
+  soon: boolean;
+  mins: number;
+  blurb: string;
+};
+
+const posts = await getCollection('blog');
+const projects = await getCollection('projects');
+
+const entries: Entry[] = [
+  ...posts.map((p) => ({
+    href: `/blog/${p.id}`,
+    title: p.data.title,
+    date: p.data.date,
+    kind: 'essay' as const,
+    soon: p.data.coming_soon,
+    mins: readingTime(p.body),
+    blurb: p.data.preview || excerpt(p.body),
+  })),
+  ...projects
+    .filter((p) => p.data.detail)
+    .map((p) => ({
+      href: `/projects/${p.id}`,
+      title: p.data.title.toLowerCase() + (p.data.subtitle ? ` — ${p.data.subtitle}` : ''),
+      date: p.data.date,
+      kind: 'project' as const,
+      soon: false,
+      mins: readingTime(p.body),
+      blurb: excerpt(p.body),
+    })),
+].sort((a, b) => {
+  if (a.soon !== b.soon) return a.soon ? 1 : -1;
+  return b.date.valueOf() - a.date.valueOf();
+});
+---
+
+<Base title="blog" current="blog">
+  <div class="pane-label">
+    <span class="mono">blog · {entries.filter((e) => !e.soon).length}</span>
+    <span class="filters mono-plain">
+      <span class="on">all</span><span>projects</span><span>essays</span>
+    </span>
+  </div>
+
+  <ul class="rows posts">
+    {
+      entries.map((e) => (
+        <li>
+          {e.soon ? (
+            <div class="post soon">
+              <div class="post-meta mono-plain">
+                <span>soon</span>
+                <span class="kind">{e.kind}</span>
+              </div>
+              <div class="post-body">
+                <span class="post-title">{e.title}</span>
+              </div>
+              <span class="post-mins mono-plain">—</span>
+            </div>
+          ) : (
+            <a class="post" href={e.href}>
+              <div class="post-meta mono-plain">
+                <span>{fmtDate(e.date)}</span>
+                <span class="kind">{e.kind}</span>
+              </div>
+              <div class="post-body">
+                <span class="post-title">{e.title}</span>
+                {e.blurb && <p class="post-blurb">{e.blurb}</p>}
+              </div>
+              <span class="post-mins mono-plain">{e.mins} min</span>
+            </a>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</Base>
+
+<style>
+  .filters {
+    display: flex;
+    gap: 12px;
+  }
+  .filters .on {
+    color: var(--ink);
+  }
+  .post {
+    display: flex;
+    gap: 24px;
+    padding: 18px 0;
+    color: var(--ink);
+  }
+  .post:hover .post-title {
+    color: var(--accent);
+  }
+  .post.soon {
+    color: var(--muted);
+  }
+  .post.soon .post-title {
+    color: var(--muted);
+  }
+  .post-meta {
+    width: 110px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .kind {
+    font-size: 11px;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+  }
+  .post-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .post-title {
+    font-family: var(--font-display);
+    font-size: 23px;
+    line-height: 1.15;
+    transition: color 150ms;
+  }
+  .post-blurb {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .post-mins {
+    width: 64px;
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--muted);
+  }
+  @media (max-width: 720px) {
+    .filters {
+      gap: 10px;
+      font-size: 11px;
+    }
+    .post {
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px 0;
+    }
+    .post-meta {
+      width: auto;
+      flex-direction: row;
+      gap: 8px;
+      font-size: 11px;
+    }
+    .post-meta .kind::before {
+      content: '· ';
+    }
+    .post-title {
+      font-size: 20px;
+    }
+    .post-blurb {
+      font-size: 13px;
+    }
+    .post-mins {
+      display: none;
+    }
+  }
+</style>
