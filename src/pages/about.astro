@@ -20,30 +20,23 @@ const photos = [
     </div>
 
     <div class="bio">
-      <span class="mono muted">about</span>
+      <span class="mono muted">nice to meet you!</span>
       <p>
-        senior at Columbia studying CS &amp; Philosophy. i care about how generative models get built and trained — and about
-        keeping human creativity and agency at the front of that story, not as an afterthought.
+        i'm a senior at Barnard studying Computer Science and Philosophy. i'm most interested in learning how generative AI models can be built and trained to make our lives more fulfilling while putting human creativity and agency at the forefront.
       </p>
       <p>
-        this summer i was a SWE intern at J.P. Morgan Chase working on knowledge management for AI agents. before that i
-        worked with <a class="u" href="https://www.cs.columbia.edu/~smara/" target="_blank" rel="noopener">Prof. Muresan</a> on a
-        human–AI collaboration framework for detecting prosecutorial misconduct in appellate cases (<a
-          class="u"
-          href="/assets/improperconduct.pdf"
-          target="_blank"
-          rel="noopener">poster</a
-        >), and interned on the API team at <a class="u" href="https://www.carson.live/" target="_blank" rel="noopener">Carson</a>.
+        placeholder placeholder placeholder.
       </p>
       <p class="muted">
-        off the clock: reviving dead fan pages from the Wayback Machine, arguing about free will, and making my friends guess
-        whether the video is real.
+        in my free time, you can find me baking, blogging, updating my Letterboxd (just watched Buddy!), and designing a dreamhouse for my Calico Critters collection.
       </p>
     </div>
   </div>
 
-  <div class="strip-wrap">
-    <ul class="strip" aria-label="photos">
+  <div class="gallery">
+    <span class="mono muted">my camera roll</span>
+    <div class="strip-wrap">
+      <ul class="strip" aria-label="my camera roll">
       {
         photos.map((p) => (
           <li>
@@ -51,7 +44,8 @@ const photos = [
           </li>
         ))
       }
-    </ul>
+      </ul>
+    </div>
   </div>
 
 </Base>
@@ -87,12 +81,18 @@ const photos = [
   .bio p {
     margin: 0;
   }
-  /* horizontal photo strip: uniform 4:3 tiles, snap scrolling, soft edge fades */
+  /* gallery sits under the bio; the strip still bleeds to the pane edges */
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: auto;
+  }
   .strip-wrap {
     position: relative;
-    /* anchor to the bottom of the pane; at least 24px clear of the bio above */
-    margin: auto -32px 0;
-    padding-top: 24px;
+    align-self: stretch;
+    margin: 0 -32px;
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
     mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
   }
@@ -155,9 +155,11 @@ const photos = [
       line-height: 1.5;
       gap: 8px;
     }
+    .gallery {
+      gap: 10px;
+    }
     .strip-wrap {
-      margin: auto -18px 0;
-      padding-top: 18px;
+      margin: 0 -18px;
       -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
       mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
     }
