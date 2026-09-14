@@ -88,16 +88,39 @@ button {
   z-index: 1;
   height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 72px 24px 48px;
+  /* The home card (560px) and the bunny perched above it (--pet-headroom, set inline
+     from pet-config) are centred as one group. Anchoring the card's top edge — rather
+     than centring each window size — keeps the bunny seated in the same spot on every
+     tab; the larger window simply grows downward (and clamps on short viewports). */
+  --frame-top: max(calc(50dvh - 280px + var(--pet-headroom, 0px) / 2), calc(var(--pet-headroom, 0px) + 20px));
+  padding: var(--frame-top) 24px 48px;
 }
 .corner-tag {
   position: fixed;
   top: 34px;
   right: 40px;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
   color: var(--on-sky);
+}
+/* desktop: the theme toggle lives under the corner tag, like a forecast icon */
+.corner-tag .theme-toggle {
+  width: 36px;
+  height: 36px;
+  margin-right: -3px;
+  color: var(--on-sky);
+}
+.corner-tag .theme-toggle svg {
+  width: 30px;
+  height: 30px;
+}
+.window-head .theme-toggle {
+  display: none;
 }
 
 /* ---------- window ----------
@@ -122,7 +145,7 @@ button {
   contain: layout paint;
   /* size changes are instant in layout; the visible motion is a FLIP transform
      animation driven from Base.astro (transform + border-radius only).
-     No color transitions here — the theme crossfade handles that in one pass. */
+     Theme colors follow html[data-theme] with no extra transition. */
 }
 .window[data-size='large'] {
   width: min(880px, 100%);
@@ -258,8 +281,9 @@ button {
   transition: none;
 }
 
-/* theme toggle */
+/* theme toggle — classic sun ↔ moon; night state is html[data-theme='night'] only */
 .theme-toggle {
+  --classic-duration: 400ms;
   display: inline-flex;
   width: 32px;
   height: 32px;
@@ -267,23 +291,44 @@ button {
   justify-content: center;
   border-radius: 50%;
   color: var(--ink);
-  transition: background 150ms;
-}
-.theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.25);
 }
 .theme-toggle svg {
   width: 22px;
   height: 22px;
+  overflow: visible;
 }
-.theme-toggle .icon-sun {
-  display: none;
+.theme-toggle .classic-core {
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: transform var(--classic-duration);
 }
-html[data-theme='night'] .theme-toggle .icon-sun {
-  display: block;
+html[data-theme='night'] .theme-toggle .classic-core {
+  transform: scale(1.7);
 }
-html[data-theme='night'] .theme-toggle .icon-moon {
-  display: none;
+.theme-toggle .classic-clip {
+  transition: d var(--classic-duration), transform var(--classic-duration);
+}
+html[data-theme='night'] .theme-toggle .classic-clip {
+  d: path('M0 2h13a1 1 0 0010 10v14H0Z');
+  transition-delay: calc(var(--classic-duration) * 0.15);
+}
+@supports not (d: path('M0 0')) {
+  html[data-theme='night'] .theme-toggle .classic-clip {
+    transform: translate(-0.8125rem, 0.125rem);
+  }
+}
+.theme-toggle .classic-ray {
+  transform-box: view-box;
+  transform-origin: center;
+  transition:
+    transform var(--classic-duration),
+    opacity var(--classic-duration);
+  transition-delay: calc(var(--classic-duration) * 0.15);
+}
+html[data-theme='night'] .theme-toggle .classic-ray {
+  transform: scale(0);
+  opacity: 0;
+  transition-delay: 0s;
 }
 
 /* glass footer under the pane (home only) */
@@ -313,7 +358,6 @@ html[data-theme='night'] .theme-toggle .icon-moon {
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
-  transition: background var(--dur) var(--ease);
 }
 .pane > :last-child {
   margin-bottom: 0;
@@ -535,7 +579,16 @@ html[data-theme='night'] .theme-toggle .icon-moon {
   .corner-tag {
     top: 18px;
     right: 20px;
+  }
+  .corner-tag .mono {
     font-size: 11px;
+  }
+  /* mobile: toggle stays inside the card header (m4-a) */
+  .corner-tag .theme-toggle {
+    display: none;
+  }
+  .window-head .theme-toggle {
+    display: inline-flex;
   }
   .window {
     width: 100%;
@@ -613,38 +666,14 @@ html[data-theme='night'] .theme-toggle .icon-moon {
   }
 }
 
-/* ---------- theme switch ----------
-   The toggle wraps the flip in document.startViewTransition() and the whole page
-   crossfades once (html.theming). Token colors flip instantly underneath, so the
-   new snapshot is already final. Browsers without the API just flip instantly. */
-
 /* ---------- view transitions ----------
    Navigation: the browser-level view transition is disabled; the window's CSS size
    transition and the header/pane fades are the whole animation.
-   Theme: a short root crossfade is re-enabled only while html.theming is set. */
+   Theme: html[data-theme] is the only switch — tokens and the classic toggle follow it. */
 ::view-transition-group(root),
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
-}
-html.theming::view-transition-old(root),
-html.theming::view-transition-new(root) {
-  animation: 280ms ease-in-out both;
-  animation-name: theme-fade-out;
-  mix-blend-mode: normal;
-}
-html.theming::view-transition-new(root) {
-  animation-name: theme-fade-in;
-}
-@keyframes theme-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes theme-fade-in {
-  from {
-    opacity: 0;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
@@ -655,6 +684,11 @@ html.theming::view-transition-new(root) {
   .window,
   .window-head,
   .pane {
+    transition: none;
+  }
+  .theme-toggle .classic-core,
+  .theme-toggle .classic-clip,
+  .theme-toggle .classic-ray {
     transition: none;
   }
 }

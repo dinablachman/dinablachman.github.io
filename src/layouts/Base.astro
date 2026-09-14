@@ -3,6 +3,8 @@ import { ClientRouter } from 'astro:transitions';
 import Sky from '../components/Sky.astro';
 import Nav from '../components/Nav.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import Pet from '../components/Pet.astro';
+import { petLayout } from '../lib/pet-config';
 import '../styles/global.css';
 
 interface Props {
@@ -26,6 +28,9 @@ const size = current === 'now' ? 'small' : 'large';
 
 const siteName = 'dina blachman';
 const pageTitle = title === siteName ? title : `${title} · ${siteName}`;
+
+/** sky reserved above the card for the bunny (desktop) — see .frame in global.css */
+const petHeadroom = petLayout().headroom;
 ---
 
 <!doctype html>
@@ -61,11 +66,13 @@ const pageTitle = title === siteName ? title : `${title} · ${siteName}`;
   <body>
     <Sky />
 
-    <div class="corner-tag mono" transition:persist="corner">
-      <span data-local-time>new york</span>
+    <!-- top-right "forecast" cluster: location · time with the theme toggle beneath (desktop) -->
+    <div class="corner-tag" transition:persist="corner">
+      <span class="mono" data-local-time>new york</span>
+      <ThemeToggle />
     </div>
 
-    <div class="frame">
+    <div class="frame" style={`--pet-headroom:${petHeadroom}px`}>
       <!--
         The window persists across client-side navigations (transition:persist) so its
         size change is a plain CSS transition. The script below swaps the nav state and
@@ -114,32 +121,22 @@ const pageTitle = title === siteName ? title : `${title} · ${siteName}`;
           )
         }
       </main>
+      <Pet />
     </div>
 
     <script>
-      // Theme toggle — delegated so it survives client-side navigation.
-      // Wrapped in a view transition for a uniform crossfade; CSS transitions on
-      // html.theming carry any element the snapshot misses (e.g. the live canvas).
+      // Theme lives in one place: html[data-theme]. Tokens, sky, pet, and the
+      // classic toggle all read that attribute. No view-transition wrap — overlapping
+      // snapshots were leaving the persisted card on the previous theme.
       document.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest('[data-theme-toggle]');
         if (!btn) return;
         const root = document.documentElement;
         const next = root.getAttribute('data-theme') === 'night' ? 'light' : 'night';
-        const apply = () => {
-          root.setAttribute('data-theme', next);
-          try {
-            localStorage.setItem('theme', next);
-          } catch {}
-        };
-        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const svt = (document as any).startViewTransition?.bind(document);
-        if (svt && !reduced) {
-          // one 280ms crossfade of the whole page; colors flip instantly underneath
-          root.classList.add('theming');
-          svt(apply).finished.finally(() => root.classList.remove('theming'));
-        } else {
-          apply(); // no API / reduced motion: instant flip
-        }
+        root.setAttribute('data-theme', next);
+        try {
+          localStorage.setItem('theme', next);
+        } catch {}
       });
 
       // Keep theme across view transitions (Astro re-renders <html> attrs from the new doc).
