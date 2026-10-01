@@ -28,7 +28,7 @@ body {
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--ink);
-  background: var(--sky-4);
+  background: var(--sky-low);
 }
 a {
   color: inherit;

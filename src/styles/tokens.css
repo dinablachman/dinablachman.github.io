@@ -37,11 +37,12 @@
   --ease-spring: cubic-bezier(0.32, 0.72, 0, 1); /* fast start, soft landing */
   --dur: 350ms;
 
-  /* sky palette (feralui "blue sky" preset) */
-  --sky-1: #e6f2ff;
-  --sky-2: #b3d9ff;
-  --sky-3: #80b3ff;
-  --sky-4: #6699e6;
+  /* sky tones — FeralUI "Untitled blend" (Sky.astro). Roles, by the shader:
+     high lights the crests, main is the base, mid the middle band, low burns the horizon. */
+  --sky-high: #e6f2ff;
+  --sky-main: #b3d9ff;
+  --sky-mid: #a0d8ef;
+  --sky-low: #80b3ff;
   --stars-opacity: 0;
 
   /* surfaces */
@@ -62,11 +63,11 @@
 }
 
 :root[data-theme='night'] {
-  /* night tones for the sky shader: lightest .. darkest */
-  --sky-1: #2a3d6b;
-  --sky-2: #1b2a4a;
-  --sky-3: #0f1730;
-  --sky-4: #05070f;
+  /* night: the same four roles in the navy palette */
+  --sky-high: #2a3d6b;
+  --sky-main: #1b2a4a;
+  --sky-mid: #0f1730;
+  --sky-low: #05070f;
   --stars-opacity: 1;
 
   --glass: rgba(255, 255, 255, 0.08);
