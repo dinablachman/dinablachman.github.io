@@ -37,12 +37,13 @@
   --ease-spring: cubic-bezier(0.32, 0.72, 0, 1); /* fast start, soft landing */
   --dur: 350ms;
 
-  /* sky tones — FeralUI "Untitled blend" (Sky.astro). Roles, by the shader:
-     high lights the crests, main is the base, mid the middle band, low burns the horizon. */
-  --sky-high: #e6f2ff;
-  --sky-main: #b3d9ff;
-  --sky-mid: #ebf6f7;
-  --sky-low: #d6eaf3;
+  /* sky tones — FeralUI "Untitled blend" (Sky.astro), the export's TONES exactly:
+     main is the base field, low is burned into it for the cloud shadows, mid and high
+     lift the crests. Keep main lighter than low or the shadows turn into dark streaks. */
+  --sky-main: #e6f2ff;
+  --sky-low: #b3d9ff;
+  --sky-mid: #d6eaf3;
+  --sky-high: #ebf6f7;
   --stars-opacity: 0;
 
   /* surfaces */

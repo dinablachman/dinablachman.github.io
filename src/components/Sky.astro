@@ -46,7 +46,7 @@
     overflow: hidden;
     isolation: isolate;
     /* the export's palette gradient (its STOPS, top to bottom): first paint + no-WebGL */
-    background: linear-gradient(180deg, var(--sky-high), var(--sky-main), var(--sky-low), var(--sky-mid));
+    background: linear-gradient(180deg, var(--sky-main), var(--sky-low), var(--sky-mid), var(--sky-high));
     transition: background var(--dur) var(--ease);
   }
   .sky-canvas {
@@ -196,7 +196,7 @@ void main(){
   gl_FragColor = vec4(col, 1.0);
 }`;
   const DEFAULT_SPEED = 25;
-  const START_T = 66.15660560000431;
+  const START_T = 135.70845560000205;
   const SCALE = 45;
   const DISTORTION = 50;
   const SWIRL = 40;
