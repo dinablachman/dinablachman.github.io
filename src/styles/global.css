@@ -109,6 +109,22 @@ button {
   color: var(--on-sky);
 }
 /* desktop: the theme toggle lives under the corner tag, like a forecast icon */
+.corner-line,
+.corner-tag .temp {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.4ch; /* ≈ a tracked space, so both "·" separators read the same */
+}
+.corner-tag .temp-icon {
+  width: 13px;
+  height: 13px;
+  margin-right: -0.7ch;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .corner-tag .theme-toggle {
   width: 36px;
   height: 36px;

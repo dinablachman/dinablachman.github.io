@@ -26,7 +26,7 @@ This repo is a single **Astro static site** (personal portfolio, dinablachman.co
 
 ### Non-obvious notes
 
-- Theme is stored in `localStorage('theme')` and applied in an inline `<head>` script before paint; `astro:before-swap` re-applies it across client-side navigations.
+- Theme defaults to New York's clock (night 18:00–06:00) in an inline `<head>` script before paint; a manual toggle is kept in `sessionStorage('theme')` for the rest of that visit. `astro:before-swap` re-applies it across client-side navigations. The corner tag's temperature comes from Open-Meteo (no key) at runtime.
 - Paths in markdown are plain absolute (`/assets/...`); no Liquid. Media referenced from frontmatter is only rendered if the file exists in `public/` (checked at build time).
 - There is **no lint config and no automated test suite**. Validation = `npm run build` succeeds + manual browser checks of `/`, `/about`, `/projects`, `/blog`, a post, a project write-up, the theme toggle, and a 390px-wide viewport.
 - Design source of truth is the Paper file "dina portfolio — v1 mockups" (v3-a…e desktop boards, m3-a…e mobile boards).
