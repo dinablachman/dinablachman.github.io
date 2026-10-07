@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="not found" current={null}>
+  <div class="pane-label"><span class="mono">404</span></div>
+  <p class="serif big">nothing up here.</p>
+  <p class="muted">the page you wanted drifted off. <a class="u" href="/">back to now →</a></p>
+</Base>
+
+<style>
+  .big {
+    font-size: 26px;
+    margin: 0;
+  }
+  p {
+    margin: 0;
+  }
+</style>

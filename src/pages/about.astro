@@ -1,0 +1,175 @@
+---
+import Base from '../layouts/Base.astro';
+
+// uniform 4:3 tiles; `focus` is the object-position used when cropping
+const photos = [
+  { src: '/assets/images/gallery/01.jpg', alt: 'ILLIT on stage at a concert in LA', focus: '50% 55%' },
+  { src: '/assets/images/gallery/02.jpg', alt: 'friends building mechanical keyboards on the floor', focus: '50% 45%' },
+  { src: '/assets/images/gallery/03.jpg', alt: 'group photo with friends in a living room', focus: '50% 40%' },
+  { src: '/assets/images/gallery/04.jpg', alt: 'beach at dusk from the boardwalk', focus: '50% 60%' },
+  { src: '/assets/images/gallery/05.jpg', alt: 'The Outsiders on Broadway, from the mezzanine', focus: '50% 55%' },
+  { src: '/assets/images/gallery/06.jpg', alt: 'Barnard bear mascot with pom-poms on campus', focus: '50% 60%' },
+  { src: '/assets/images/gallery/07.jpg', alt: 'sunset over the hills from Griffith Park', focus: '50% 45%' },
+];
+---
+
+<Base title="about" current="about">
+  <div class="about">
+    <div class="photo">
+      <img src="/assets/images/dina.jpg" alt="Dina in a white dress in front of a garden fence" width="820" height="1024" loading="eager" />
+    </div>
+
+    <div class="bio">
+      <span class="mono muted">nice to meet you!</span>
+      <p>
+        i'm a senior at Barnard studying Computer Science and Philosophy. i'm most interested in learning how generative AI models can be built and trained to make our lives more fulfilling while putting human creativity and agency at the forefront.
+      </p>
+      <p>
+        placeholder placeholder placeholder.
+      </p>
+      <p class="muted">
+        in my free time, you can find me baking, blogging, updating my Letterboxd (just watched Buddy!), and designing a dreamhouse for my Calico Critters collection.
+      </p>
+    </div>
+  </div>
+
+  <div class="gallery">
+    <span class="mono muted">my camera roll</span>
+    <div class="strip-wrap">
+      <ul class="strip" aria-label="my camera roll">
+      {
+        photos.map((p) => (
+          <li>
+            <img src={p.src} alt={p.alt} width="900" height="675" loading="lazy" decoding="async" style={`object-position:${p.focus}`} />
+          </li>
+        ))
+      }
+      </ul>
+    </div>
+  </div>
+
+</Base>
+
+<style>
+  .about {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+  }
+  .photo {
+    position: relative;
+    width: 220px;
+    aspect-ratio: 4 / 5;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: linear-gradient(160deg, var(--sky-high) 0%, var(--sky-main) 60%, var(--sky-low) 100%);
+    overflow: hidden;
+  }
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 20%;
+  }
+  .bio {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .bio p {
+    margin: 0;
+  }
+  /* gallery sits under the bio; the strip still bleeds to the pane edges */
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: auto;
+  }
+  .strip-wrap {
+    position: relative;
+    align-self: stretch;
+    margin: 0 -32px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  }
+  .strip {
+    list-style: none;
+    margin: 0;
+    padding: 0 32px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 32px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .strip::-webkit-scrollbar {
+    display: none;
+  }
+  .strip li {
+    flex: 0 0 168px;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--paper-soft);
+    scroll-snap-align: start;
+  }
+  .strip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  @media (max-width: 720px) {
+    /* photo floats left so the bio wraps beneath it (matches the mobile mock) */
+    .about {
+      display: block;
+    }
+    .photo {
+      float: left;
+      width: 128px;
+      margin: 0 14px 6px 0;
+    }
+    .about::after {
+      content: '';
+      display: block;
+      clear: both;
+    }
+    .bio {
+      display: block; /* floats don't wrap inside flex; use flow layout on mobile */
+    }
+    .bio > * + * {
+      margin-top: 8px;
+    }
+    .bio .mono {
+      display: block;
+    }
+    .bio {
+      font-size: 14px;
+      line-height: 1.5;
+      gap: 8px;
+    }
+    .gallery {
+      gap: 10px;
+    }
+    .strip-wrap {
+      margin: 0 -18px;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+    }
+    .strip {
+      padding: 0 18px;
+      scroll-padding-inline: 18px;
+      gap: 8px;
+    }
+    .strip li {
+      flex: 0 0 132px;
+    }
+  }
+</style>

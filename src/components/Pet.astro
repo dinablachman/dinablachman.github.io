@@ -1,0 +1,485 @@
+---
+/**
+ * Bunny companion — a decorative line-art bunny seated on the card's top edge.
+ *
+ * Desktop: absolutely placed inside `.frame`, right of centre, feet overlapping the
+ * card's top edge. `.frame` reserves headroom above the card (see global.css) so the
+ * card + bunny are centred as one group and the card's top edge — hence the bunny —
+ * stays put on every tab. Mobile: fixed in the lower-left corner, home tab only.
+ *
+ * Persists across client-side navigations. Tunables live in src/lib/pet-config.ts.
+ */
+import { PET_CONFIG, petLayout } from '../lib/pet-config';
+
+const d = petLayout();
+const m = PET_CONFIG.mobile;
+const hit = PET_CONFIG.poke.hit;
+const vars = [
+  `--pet-size:${d.size}px`,
+  `--pet-dx:${d.dx}px`,
+  `--pet-lift:${d.lift}px`,
+  `--pet-m-size:${m.size}px`,
+  `--pet-m-left:${m.left}px`,
+  `--pet-m-bottom:${m.bottom}px`,
+].join(';');
+---
+
+<div class="pet" aria-hidden="true" data-pet transition:persist="pet" style={vars}>
+  <!-- body carries the continuous life transforms; two sprite layers let slow pose changes dissolve -->
+  <div class="pet-body" data-pet-body>
+    <div class="pet-sprite is-on" data-pet-sprite></div>
+    <div class="pet-sprite" data-pet-sprite></div>
+  </div>
+  <!-- the only part that takes the pointer: a box the size of the bunny itself -->
+  <div class="pet-hit" data-pet-hit style={`left:${hit.left}%;top:${hit.top}%;width:${hit.width}%;height:${hit.height}%`}></div>
+</div>
+
+<style>
+  .pet {
+    position: absolute;
+    left: calc(50% + var(--pet-dx));
+    top: calc(var(--frame-top) - var(--pet-lift));
+    width: var(--pet-size);
+    height: var(--pet-size);
+    z-index: 2; /* above the glass window */
+    pointer-events: none;
+    user-select: none;
+    /* reposition hop: one bounded shift of the whole container (easing set from the script) */
+    transform: translate(var(--pet-x, 0px), var(--pet-y, 0px));
+    transition: transform 420ms var(--ease);
+  }
+  .pet-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-origin: 50% 89.5%; /* the feet — breath, fidget and squash pivot here */
+    will-change: transform;
+  }
+  .pet-sprite {
+    position: absolute;
+    inset: 0;
+    background-image: url('/assets/bunny/bunny.png');
+    background-repeat: no-repeat;
+    background-size: 600% 500%; /* 6 × 5 atlas */
+    background-position: 0% 0%; /* idle */
+    image-rendering: auto; /* smooth line art, not pixel art */
+    opacity: 0;
+  }
+  .pet-sprite.is-on {
+    opacity: 1;
+  }
+  .pet-hit {
+    position: absolute;
+    pointer-events: auto;
+    cursor: default; /* it's a pet, not a button */
+  }
+
+  @media (max-width: 720px) {
+    .pet {
+      position: fixed;
+      top: auto;
+      left: var(--pet-m-left);
+      bottom: var(--pet-m-bottom);
+      width: var(--pet-m-size);
+      height: var(--pet-m-size);
+    }
+    /* the larger tabs fill the phone screen — no sky below the card to sit in */
+    :global(.frame:has(.window[data-size='large'])) .pet {
+      display: none;
+    }
+  }
+  @media (max-width: 720px) and (max-height: 759px) {
+    .pet {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pet,
+    .pet-sprite {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { PET_CONFIG as C, ATLAS, SHEET, CLIPS, type FrameName, type ClipStep } from '../lib/pet-config';
+
+  // ---------------------------------------------------------------------------
+  // State controller. Exactly one action owns the displayed frame at a time:
+  //   idle | blink | gesture | reposition | fallingAsleep | sleeping | waking
+  // Resting pose is plain idle; blinking then nose twitches are the most common
+  // motions. Night theme: sleeping is the default — it stirs awake now and then,
+  // and a click or key wakes it; switching back to light wakes it.
+  // ---------------------------------------------------------------------------
+  type State = 'idle' | 'blink' | 'gesture' | 'poked' | 'reposition' | 'fallingAsleep' | 'sleeping' | 'waking';
+  type IdleKind = 'blink' | 'nose' | 'gesture' | 'groom' | 'reposition';
+  const IDLE_KINDS: IdleKind[] = ['blink', 'nose', 'gesture', 'groom', 'reposition'];
+  const rand = (r: readonly [number, number]) => r[0] + Math.random() * (r[1] - r[0]);
+
+  const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  class Pet {
+    private body: HTMLElement;
+    private layers: [HTMLElement, HTMLElement];
+    private front = 0; // which sprite layer is showing
+    private frame: FrameName = 'idle';
+    private state: State = 'idle';
+    private clipTimer: number | null = null;
+    private clipShown: FrameName[] = [];
+    private idleTimers: Record<IdleKind, number | null> = { blink: null, nose: null, gesture: null, groom: null, reposition: null };
+    private stirTimer: number | null = null; // night: brief wake-ups
+    private sleepCheck: number | null = null;
+    private lastActivity = performance.now();
+    private wantSleep = false; // theme flipped to night while a clip was playing
+    private offset = { x: 0, y: 0 };
+    private night = document.documentElement.dataset.theme === 'night';
+    private running = false;
+    private hovers: number[] = []; // recent pointerenter timestamps on the hit area
+    private pokedAt = -Infinity;
+    // life layer (rAF): breath phase, current fidget glide, landing squash
+    private raf: number | null = null;
+    private breathAmt = 0; // fades 0→1 on start so it never pops in
+    private fidget = { rot: 0, lift: 0, fromRot: 0, fromLift: 0, toRot: 0, toLift: 0, t0: 0, dur: 1, next: 0 };
+    private squash = { t0: -1, amt: 0 };
+
+    constructor(private el: HTMLElement) {
+      this.body = el.querySelector<HTMLElement>('[data-pet-body]')!;
+      const ls = el.querySelectorAll<HTMLElement>('[data-pet-sprite]');
+      this.layers = [ls[0], ls[1]];
+      this.el.style.setProperty('transition', `transform ${C.life.hop.duration}ms ${C.life.hop.ease}`);
+      // the hit box is the only thing that takes the pointer: a click, or being crossed repeatedly, is a poke
+      const hit = el.querySelector<HTMLElement>('[data-pet-hit]')!;
+      hit.addEventListener('pointerdown', () => this.poke(), { passive: true });
+      hit.addEventListener('pointerenter', () => {
+        const now = performance.now();
+        this.hovers = this.hovers.filter((t) => now - t < C.poke.hoverWindow);
+        this.hovers.push(now);
+        if (this.hovers.length >= C.poke.hoverCount) {
+          this.hovers = [];
+          this.poke();
+        }
+      });
+      // page-level listeners for presence / waking
+      document.addEventListener('pointermove', this.onPointerMove, { passive: true });
+      for (const t of ['pointerdown', 'keydown', 'focusin', 'touchstart'] as const)
+        document.addEventListener(t, this.onInteract, { passive: true, capture: true });
+      document.addEventListener('visibilitychange', () => (document.hidden ? this.pause() : this.resume()));
+      new MutationObserver(() => this.onTheme(document.documentElement.dataset.theme === 'night')).observe(
+        document.documentElement,
+        { attributes: true, attributeFilter: ['data-theme'] },
+      );
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+      const apply = () => (reduced.matches ? this.stop() : this.start());
+      reduced.addEventListener('change', apply);
+      apply();
+    }
+
+    // --- lifecycle -----------------------------------------------------------
+    private start() {
+      if (this.running) return;
+      this.running = true;
+      this.state = 'idle';
+      this.show('idle');
+      this.lastActivity = performance.now();
+      this.scheduleAllIdle();
+      this.sleepCheck = window.setInterval(() => this.checkSleep(), 1000);
+      if (this.night) this.wantSleep = true; // loaded in night mode: doze off right away
+      this.startLife();
+    }
+    /** reduced motion: static idle, nothing scheduled */
+    private stop() {
+      this.running = false;
+      this.clearAllTimers();
+      this.stopLife();
+      this.state = 'idle';
+      this.show('idle');
+    }
+    /** hidden tab: freeze on a stable frame, no timers */
+    private pause() {
+      if (!this.running) return;
+      this.clearAllTimers();
+      this.stopLife();
+      if (this.state === 'fallingAsleep' || this.state === 'sleeping') {
+        this.state = 'sleeping';
+        this.show('sleep-rest');
+      } else {
+        this.state = 'idle';
+        this.show('idle');
+      }
+    }
+    private resume() {
+      if (!this.running || this.sleepCheck) return;
+      this.lastActivity = performance.now();
+      this.sleepCheck = window.setInterval(() => this.checkSleep(), 1000);
+      if (this.state === 'idle') this.scheduleAllIdle();
+      else if (this.state === 'sleeping' && this.night) this.scheduleStir();
+      this.startLife();
+    }
+    private clearAllTimers() {
+      this.cancelClip();
+      this.clearIdleTimers();
+      if (this.stirTimer) clearTimeout(this.stirTimer);
+      this.stirTimer = null;
+      if (this.sleepCheck) clearInterval(this.sleepCheck);
+      this.sleepCheck = null;
+    }
+
+    // --- life layer: breath + fidget + landing squash, one rAF loop ------------
+    private startLife() {
+      if (this.raf !== null || !this.running) return;
+      if (!C.life.breathe && !C.life.fidget) return;
+      this.breathAmt = 0;
+      const tick = (now: number) => {
+        this.raf = requestAnimationFrame(tick);
+        const asleep = this.state === 'sleeping' || this.state === 'fallingAsleep';
+        this.breathAmt = Math.min(1, this.breathAmt + 1 / 90); // ~1.5 s fade-in
+        let sx = 1, sy = 1, y = 0, rot = 0;
+        if (C.life.breathe) {
+          const b = asleep ? C.life.sleepBreath : C.life.breath;
+          const p = (1 - Math.cos((now / b.period) * Math.PI * 2)) / 2; // 0→1→0, smooth
+          const a = p * this.breathAmt;
+          sy += b.scaleY * a;
+          sx += b.scaleX * a;
+          y -= b.lift * a;
+        }
+        if (C.life.fidget && !asleep) {
+          const f = this.fidget;
+          if (now >= f.next) {
+            // new micro-pose: glide from where we are to a fresh small random one (never repeats)
+            f.fromRot = f.rot;
+            f.fromLift = f.lift;
+            f.toRot = (Math.random() - 0.5) * 2 * C.life.fidgetRotate;
+            f.toLift = (Math.random() - 0.5) * 2 * C.life.fidgetLift;
+            f.t0 = now;
+            f.dur = rand(C.life.fidgetGlide);
+            f.next = now + rand(C.life.fidgetEvery);
+          }
+          const k = easeInOut(Math.min(1, (now - f.t0) / f.dur));
+          f.rot = f.fromRot + (f.toRot - f.fromRot) * k;
+          f.lift = f.fromLift + (f.toLift - f.fromLift) * k;
+          rot += f.rot * this.breathAmt;
+          y += f.lift * this.breathAmt;
+        }
+        if (this.squash.t0 >= 0) {
+          // landing: squash-and-pop like the blob's boop — [1, 1−a, 1+a/3, 1−a/8, 1] over 380 ms
+          const t = (now - this.squash.t0) / 380;
+          if (t >= 1) this.squash.t0 = -1;
+          else {
+            const K = [0, -1, 1 / 3, -1 / 8, 0], T = [0, 0.2, 0.5, 0.78, 1];
+            let i = 1;
+            while (T[i] < t) i++;
+            const k = easeInOut((t - T[i - 1]) / (T[i] - T[i - 1]));
+            const v = (K[i - 1] + (K[i] - K[i - 1]) * k) * this.squash.amt;
+            sy += v;
+            sx -= v * 0.6;
+          }
+        }
+        this.body.style.transform = `translateY(${y.toFixed(2)}px) rotate(${rot.toFixed(2)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+      };
+      this.raf = requestAnimationFrame(tick);
+    }
+    private stopLife() {
+      if (this.raf !== null) cancelAnimationFrame(this.raf);
+      this.raf = null;
+      this.body.style.transform = '';
+    }
+
+    // --- frames & clips ------------------------------------------------------
+    /**
+     * Swap frames. Default is a hard cut (the frames are registered to the same body, so a cut reads
+     * as the part moving). With `fade`, the new frame appears fully underneath and the old one
+     * dissolves out on top — never two half-transparent outlines stacked, which darkens the linework.
+     */
+    private show(f: FrameName, fade = 0) {
+      if (f === this.frame) return;
+      const [col, row] = ATLAS[f];
+      const old = this.layers[this.front];
+      const next = this.layers[1 - this.front];
+      next.style.backgroundPosition = `${(col * 100) / (SHEET.cols - 1)}% ${(row * 100) / (SHEET.rows - 1)}%`;
+      next.style.transition = 'none';
+      next.style.zIndex = '0';
+      next.classList.add('is-on');
+      old.style.zIndex = '1';
+      old.style.transition = fade ? `opacity ${fade}ms linear` : 'none';
+      old.classList.remove('is-on');
+      this.front = 1 - this.front;
+      this.frame = f;
+    }
+    /** Play a clip once. A 0 ms step is an endpoint: hold it and finish. */
+    private play(steps: readonly ClipStep[], state: State, done: () => void, onFrame?: (f: FrameName) => void, fade = 0) {
+      this.cancelClip();
+      this.state = state;
+      this.clipShown = [];
+      let i = 0;
+      const step = () => {
+        if (i >= steps.length) {
+          this.clipTimer = null;
+          done();
+          return;
+        }
+        const [f, ms] = steps[i++];
+        this.show(f, fade);
+        this.clipShown.push(f);
+        onFrame?.(f);
+        if (ms === 0) {
+          this.clipTimer = null;
+          done();
+          return;
+        }
+        this.clipTimer = window.setTimeout(step, ms);
+      };
+      step();
+    }
+    private cancelClip() {
+      if (this.clipTimer) clearTimeout(this.clipTimer);
+      this.clipTimer = null;
+    }
+    /** clip finished: back to the resting pose */
+    private settle() {
+      this.state = 'idle';
+      this.show('idle');
+    }
+    /** mouse movement counts as presence in light mode; at night the mouse alone doesn't keep it up */
+    private onPointerMove = () => {
+      if (!this.night) this.lastActivity = performance.now();
+    };
+    /** clicked or pestered: look around once, then ignore pokes for a while */
+    private poke() {
+      if (!this.running) return;
+      this.lastActivity = performance.now();
+      if (this.state === 'sleeping' || this.state === 'fallingAsleep') {
+        this.wakeUp();
+        return;
+      }
+      if (this.state === 'reposition' || this.state === 'waking' || this.state === 'poked') return;
+      if (performance.now() - this.pokedAt < C.poke.cooldown) return;
+      this.pokedAt = performance.now();
+      // a blink or small gesture in progress is simply cut short — this is a reaction
+      this.play(CLIPS.lookAround, 'poked', () => this.settle());
+    }
+
+    // --- idle behaviours (each owns its own timer; none restarts the others) ---
+    private scheduleAllIdle() {
+      for (const k of IDLE_KINDS) this.schedule(k);
+    }
+    private clearIdleTimers() {
+      for (const k of IDLE_KINDS) {
+        if (this.idleTimers[k]) clearTimeout(this.idleTimers[k]!);
+        this.idleTimers[k] = null;
+      }
+    }
+    private schedule(kind: IdleKind) {
+      if (this.idleTimers[kind]) clearTimeout(this.idleTimers[kind]!);
+      this.idleTimers[kind] = window.setTimeout(() => {
+        this.idleTimers[kind] = null;
+        if (this.state !== 'idle' || this.wantSleep) {
+          this.schedule(kind); // something else owns the frame — try again later
+          return;
+        }
+        const again = () => (this.settle(), this.schedule(kind));
+        if (kind === 'blink') {
+          // mostly a normal blink; sometimes a quick double, slow and heavy-lidded, or a wink
+          const { blinkDouble: d, blinkSlow: s, blinkWink: w } = C.timing;
+          const r = Math.random();
+          const clip = r < d ? CLIPS.blinkDouble : r < d + s ? CLIPS.blinkSlow : r < d + s + w ? CLIPS.wink : CLIPS.blink;
+          this.play(clip, 'blink', again);
+        } else if (kind === 'nose') this.play(CLIPS.noseTwitch, 'gesture', again);
+        else if (kind === 'gesture') {
+          const pool = [CLIPS.tiltLeft, CLIPS.tiltRight, CLIPS.earTwitch, CLIPS.earPerk];
+          this.play(pool[Math.floor(Math.random() * pool.length)], 'gesture', again);
+        } else if (kind === 'groom') this.play(CLIPS.groom, 'gesture', again);
+        else this.reposition(again);
+      }, rand(C.timing[kind]));
+    }
+    /** one hop; the container shifts once while airborne, never past ±bounds from home */
+    private reposition(done: () => void) {
+      const { step, bounds } = C.move;
+      const sign = () => (Math.random() < 0.5 ? -1 : 1);
+      const clamp = (v: number) => Math.max(-bounds, Math.min(bounds, v));
+      const dx = clamp(this.offset.x + sign() * rand(step));
+      const dy = clamp(this.offset.y + sign() * rand(step) * 0.5); // mostly sideways
+      this.play(CLIPS.hop, 'reposition', done, (f) => {
+        if (f === 'hop-air') {
+          // the container glides with an overshoot ease so the landing settles like a spring
+          this.offset = { x: dx, y: dy };
+          this.el.style.setProperty('--pet-x', `${dx.toFixed(1)}px`);
+          this.el.style.setProperty('--pet-y', `${dy.toFixed(1)}px`);
+        } else if (f === 'hop-squash') {
+          this.squash = { t0: performance.now(), amt: C.life.hop.landSquash }; // squash-and-pop rides the drawn squash frame
+        }
+      });
+    }
+
+    // --- sleep / wake --------------------------------------------------------
+    private checkSleep() {
+      if (this.state !== 'idle') return; // let the active clip finish; re-checked next tick
+      const after = this.night ? C.timing.nightSleepAfter : C.timing.sleepAfter;
+      if (!this.wantSleep && performance.now() - this.lastActivity < after) return;
+      this.wantSleep = false;
+      this.clearIdleTimers();
+      // slow pose changes get the dissolve; everything else in the file cuts
+      this.play(
+        CLIPS.fallAsleep,
+        'fallingAsleep',
+        () => {
+          this.state = 'sleeping';
+          if (this.night) this.scheduleStir();
+        },
+        undefined,
+        C.life.crossfade,
+      );
+    }
+    private wakeUp() {
+      if (this.stirTimer) clearTimeout(this.stirTimer);
+      this.stirTimer = null;
+      this.wantSleep = false; // a wake request always wins; night mode dozes off again via checkSleep
+      const after = () => (this.settle(), this.scheduleAllIdle());
+      if (this.state === 'sleeping') this.play(CLIPS.wake, 'waking', after, undefined, C.life.crossfade);
+      else if (this.state === 'fallingAsleep') {
+        // caught mid-transition: reverse the lowering frames already shown instead of snapping
+        const back: ClipStep[] = this.clipShown.slice(0, -1).reverse().map((f) => [f, 260]);
+        this.play(back, 'waking', after, undefined, C.life.crossfade);
+      }
+      // 'waking' ignores repeated input
+    }
+    private onInteract = () => {
+      this.lastActivity = performance.now();
+      if (!this.running) return;
+      if (this.state === 'sleeping' || this.state === 'fallingAsleep') this.wakeUp();
+    };
+    /** night: sleeping is the default, with the occasional brief stir */
+    private scheduleStir() {
+      if (this.stirTimer) clearTimeout(this.stirTimer);
+      this.stirTimer = window.setTimeout(() => {
+        this.stirTimer = null;
+        if (!this.night || this.state !== 'sleeping') return;
+        // wake, stay up for a moment (it may blink), then checkSleep puts it back down
+        this.lastActivity = performance.now() - C.timing.nightSleepAfter + C.timing.nightStirAwake;
+        this.wakeUp();
+      }, rand(C.timing.nightStir));
+    }
+    private onTheme(night: boolean) {
+      if (night === this.night) return;
+      this.night = night;
+      if (!this.running) return;
+      if (night) {
+        if (this.state === 'sleeping') this.scheduleStir(); // already dozing: just start stirring now and then
+        else if (this.state !== 'fallingAsleep') this.wantSleep = true; // picked up by checkSleep once the current clip settles
+      } else {
+        this.wantSleep = false;
+        this.lastActivity = performance.now();
+        if (this.state === 'sleeping' || this.state === 'fallingAsleep') this.wakeUp();
+      }
+    }
+  }
+
+  const boot = () => {
+    const el = document.querySelector<HTMLElement>('[data-pet]');
+    if (el && !el.dataset.petReady) {
+      el.dataset.petReady = '1';
+      new Pet(el);
+    }
+  };
+  boot();
+  document.addEventListener('astro:page-load', boot); // no-op after the first load — the element persists
+</script>

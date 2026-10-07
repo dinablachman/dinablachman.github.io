@@ -1,0 +1,99 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { fmtDate, readingTime, publicFile } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((p) => ({ params: { slug: p.id }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const mins = readingTime(project.body);
+const hero = publicFile(project.data.gif);
+
+const all = (await getCollection('projects')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const idx = all.findIndex((p) => p.id === project.id);
+const next = all[(idx + 1) % all.length];
+---
+
+<Base title={project.data.title} description={project.data.subtitle} current="projects" wide>
+  <div class="pane-label">
+    <a class="mono back" href="/projects">← projects</a>
+    <span class="mono">{fmtDate(project.data.date)}<span class="hide-m"> · project</span> · {mins} min</span>
+  </div>
+
+  <h1 class="title serif">{project.data.title}</h1>
+  {project.data.subtitle && <p class="subtitle muted">{project.data.subtitle}</p>}
+
+  <div class="tags">
+    {project.data.stack.map((s) => <span class="tag">{s.toLowerCase()}</span>)}
+    {
+      (project.data.repo_url || project.data.live_url) && (
+        <span class="tag-sep" />
+      )
+    }
+    {
+      project.data.repo_url && (
+        <a class="pill" href={project.data.repo_url} target="_blank" rel="noopener">
+          repo ↗
+        </a>
+      )
+    }
+    {
+      project.data.live_url && (
+        <a class="pill" href={project.data.live_url} target="_blank" rel="noopener">
+          live ↗
+        </a>
+      )
+    }
+  </div>
+
+  {hero && <img class="hero" src={hero} alt={`${project.data.title} demo`} loading="lazy" />}
+
+  <article class="prose">
+    <Content />
+  </article>
+
+  <div class="pane-foot">
+    <span class="mono-plain">{project.data.status ?? ''}{project.data.role ? ` · ${project.data.role}` : ''}</span>
+    <a class="u" href={`/projects/${next.id}`}>next: {next.data.title} →</a>
+  </div>
+</Base>
+
+<style>
+  .back {
+    color: var(--ink);
+  }
+  .back:hover {
+    color: var(--accent);
+  }
+  .title {
+    font-size: 36px;
+    line-height: 1.1;
+    letter-spacing: var(--tracking-tight);
+    margin: 4px 0 0;
+    font-weight: 400;
+  }
+  .subtitle {
+    margin: -6px 0 0;
+    font-size: 17px;
+  }
+  .tag-sep {
+    width: 8px;
+  }
+  .hero {
+    width: 100%;
+    border-radius: var(--radius-md);
+    background: var(--paper-soft);
+  }
+  @media (max-width: 720px) {
+    .title {
+      font-size: 28px;
+    }
+    .subtitle {
+      font-size: 15px;
+    }
+  }
+</style>

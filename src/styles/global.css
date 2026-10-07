@@ -1,0 +1,719 @@
+@import './tokens.css';
+
+/* ---------- reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+  height: 100%;
+  overflow: hidden; /* the page never scrolls; the pane does */
+}
+html[data-theme='night'] {
+  color-scheme: dark;
+}
+body {
+  height: 100dvh;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--ink);
+  background: var(--sky-low);
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+img,
+video {
+  max-width: 100%;
+  display: block;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ---------- utilities ---------- */
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+.mono-plain {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.muted {
+  color: var(--muted);
+}
+.serif {
+  font-family: var(--font-display);
+}
+.u {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.u:hover {
+  color: var(--accent);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- page frame ---------- */
+.frame {
+  position: relative;
+  z-index: 1;
+  height: 100dvh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* The home card (560px) and the bunny perched above it (--pet-headroom, set inline
+     from pet-config) are centred as one group. Anchoring the card's top edge — rather
+     than centring each window size — keeps the bunny seated in the same spot on every
+     tab; the larger window simply grows downward (and clamps on short viewports). */
+  --frame-top: max(calc(50dvh - 280px + var(--pet-headroom, 0px) / 2), calc(var(--pet-headroom, 0px) + 20px));
+  padding: var(--frame-top) 24px 48px;
+}
+.corner-tag {
+  position: fixed;
+  top: 34px;
+  right: 40px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  color: var(--on-sky);
+}
+/* desktop: the theme toggle lives under the corner tag, like a forecast icon */
+.corner-line,
+.corner-tag .temp {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.4ch; /* ≈ a tracked space, so both "·" separators read the same */
+}
+.corner-tag .temp-icon {
+  width: 13px;
+  height: 13px;
+  margin-right: -0.7ch;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.corner-tag .theme-toggle {
+  width: 36px;
+  height: 36px;
+  margin-right: -3px;
+  color: var(--on-sky);
+}
+.corner-tag .theme-toggle svg {
+  width: 30px;
+  height: 30px;
+}
+.window-head .theme-toggle {
+  display: none;
+}
+
+/* ---------- window ----------
+   Two sizes, per the Paper boards: home (v3-a) is the small window with the full
+   header; about/projects/blog/write-ups (v3-b…e) share one larger window with the
+   compact header. The element persists across navigations, so the size change is
+   a single CSS transition. */
+.window {
+  width: min(720px, 100%);
+  height: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  contain: layout paint;
+  /* size changes are instant in layout; the visible motion is a FLIP transform
+     animation driven from Base.astro (transform + border-radius only).
+     Theme colors follow html[data-theme] with no extra transition. */
+}
+.window[data-size='large'] {
+  width: min(880px, 100%);
+  height: min(680px, 100%);
+}
+
+/* header + pane content: opacity and transform during a swap are driven entirely
+   by WAAPI in Base.astro (same clock as the FLIP), so no CSS transitions here.
+   .is-leaving only hides the freshly-swapped content until the reveal starts. */
+.window-head,
+.pane,
+.window-foot {
+  opacity: 1;
+  will-change: transform, opacity;
+}
+.window-head.is-leaving,
+.pane.is-leaving,
+.window-foot.is-leaving {
+  opacity: 0;
+}
+
+.window-head {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 28px var(--space-11) 0;
+}
+.window-head.full {
+  padding-top: 40px;
+}
+.head-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+}
+.head-top .mono {
+  color: var(--ink-3);
+}
+.head-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 28px;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+  margin: 0;
+}
+.full .head-title {
+  font-size: 42px;
+  margin-top: 16px;
+}
+.head-summary {
+  margin: 16px 0 0;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+/* typewriter caret on the home heading */
+.typed {
+  white-space: nowrap;
+}
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.85em;
+  margin-left: 3px;
+  vertical-align: -0.08em;
+  background: currentColor;
+  opacity: 0.9;
+  transition: opacity 400ms var(--ease);
+}
+.caret.fade {
+  opacity: 0;
+}
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+/* nav */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 16px;
+}
+.full .nav {
+  padding-top: 26px;
+}
+.nav ul {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 6px; /* room for the underline */
+  display: flex;
+  gap: 26px;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+.nav ul li {
+  display: flex;
+  align-items: baseline;
+}
+.nav a {
+  display: inline-block;
+  color: var(--ink);
+}
+.nav a.dim {
+  color: var(--ink-3);
+}
+/* one shared underline that slides between links (positioned from Base.astro).
+   Base width 100px scaled to the link width, so it's a pure transform. */
+.nav-dot {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--ink);
+  transform-origin: 0 50%;
+  transform: translateX(var(--x, 0px)) scaleX(var(--s, 0));
+  transition: transform 460ms var(--ease-spring);
+  opacity: 0;
+}
+.nav-dot.on {
+  opacity: 1;
+}
+.nav-dot.jump {
+  transition: none;
+}
+
+/* theme toggle — classic sun ↔ moon; night state is html[data-theme='night'] only */
+.theme-toggle {
+  --classic-duration: 400ms;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+/* no ring after a click or tap (Safari keeps the button focused); keyboard focus still shows one */
+.theme-toggle:focus {
+  outline: none;
+}
+.theme-toggle:focus-visible {
+  outline: 1.5px solid currentColor;
+  outline-offset: 2px;
+}
+.theme-toggle svg {
+  width: 22px;
+  height: 22px;
+  overflow: visible;
+}
+.theme-toggle .classic-core {
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: transform var(--classic-duration);
+}
+html[data-theme='night'] .theme-toggle .classic-core {
+  transform: scale(1.7);
+}
+.theme-toggle .classic-clip {
+  transition: d var(--classic-duration), transform var(--classic-duration);
+}
+html[data-theme='night'] .theme-toggle .classic-clip {
+  d: path('M0 2h13a1 1 0 0010 10v14H0Z');
+  transition-delay: calc(var(--classic-duration) * 0.15);
+}
+@supports not (d: path('M0 0')) {
+  html[data-theme='night'] .theme-toggle .classic-clip {
+    transform: translate(-0.8125rem, 0.125rem);
+  }
+}
+.theme-toggle .classic-ray {
+  transform-box: view-box;
+  transform-origin: center;
+  transition:
+    transform var(--classic-duration),
+    opacity var(--classic-duration);
+  transition-delay: calc(var(--classic-duration) * 0.15);
+}
+html[data-theme='night'] .theme-toggle .classic-ray {
+  transform: scale(0);
+  opacity: 0;
+  transition-delay: 0s;
+}
+
+/* glass footer under the pane (home only) */
+.window-foot {
+  flex-shrink: 0;
+  padding: 4px var(--space-11) 22px;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.window-foot .u {
+  color: var(--ink);
+}
+
+/* paper pane — fills the rest of the window and scrolls internally */
+.pane {
+  flex: 1;
+  min-height: 0;
+  margin: 0 12px 12px;
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.pane > :last-child {
+  margin-bottom: 0;
+}
+/* push the footer to the bottom when content is short */
+.pane-foot {
+  margin-top: auto;
+}
+.pane.wide {
+  padding-left: 64px;
+  padding-right: 64px;
+}
+.pane-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  color: var(--muted);
+}
+.pane-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.pane-foot .links {
+  display: flex;
+  gap: 16px;
+}
+
+/* list rows (projects / blog) */
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rows > li {
+  border-bottom: 1px solid var(--line);
+}
+.rows > li:last-child {
+  border-bottom: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 13px 0;
+  color: var(--ink);
+}
+.row:hover .row-title {
+  color: var(--accent);
+}
+.row-thumb {
+  width: 88px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.row-title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  line-height: 1.2;
+  transition: color 150ms;
+}
+.row-sub {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.row-meta {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* pills / tags */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  transition:
+    border-color 150ms,
+    color 150ms;
+}
+.pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* article body (markdown) */
+.prose {
+  font-size: var(--text-base);
+  line-height: 1.7;
+  color: var(--ink);
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose h2,
+.prose h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 1.6em 0 0.5em;
+}
+.prose h2 {
+  font-size: 26px;
+}
+.prose h3 {
+  font-size: 21px;
+}
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 1em;
+}
+.prose a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.prose a:hover {
+  color: var(--accent);
+}
+.prose img,
+.prose video {
+  border-radius: var(--radius-md);
+  margin: 1.2em 0;
+}
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.prose pre {
+  background: var(--paper-soft) !important;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  overflow-x: auto;
+  margin: 1.2em 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+.prose blockquote {
+  margin: 1.2em 0;
+  padding-left: 16px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+}
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2em 0;
+}
+.prose br + br {
+  display: none;
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 720px) {
+  .hide-m {
+    display: none !important;
+  }
+  .pane-label > :first-child {
+    white-space: nowrap;
+  }
+  .frame {
+    align-items: flex-start;
+    padding: 52px 16px 16px;
+  }
+  .corner-tag {
+    top: 18px;
+    right: 20px;
+  }
+  .corner-tag .mono {
+    font-size: 11px;
+  }
+  /* mobile: toggle stays inside the card header (m4-a) */
+  .corner-tag .theme-toggle {
+    display: none;
+  }
+  .window-head .theme-toggle {
+    display: inline-flex;
+  }
+  .window {
+    width: 100%;
+    height: min(560px, 100%);
+    border-radius: 20px;
+  }
+  .window[data-size='large'] {
+    width: 100%;
+    height: 100%;
+  }
+  .window-head {
+    padding: 20px 22px 0;
+  }
+  .window-head.full {
+    padding-top: 24px;
+  }
+  .window-foot {
+    padding: 2px 22px 16px;
+    font-size: 13px;
+  }
+  .head-title {
+    font-size: 22px;
+  }
+  .full .head-title {
+    font-size: 32px;
+    margin-top: 12px;
+  }
+  .head-summary {
+    font-size: 15px;
+    margin-top: 12px;
+  }
+  .nav {
+    padding: 8px 0 14px;
+  }
+  .full .nav {
+    padding-top: 18px;
+  }
+  .pane.wide {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .nav ul {
+    gap: 16px;
+    font-size: 19px;
+  }
+  .theme-toggle svg {
+    width: 20px;
+    height: 20px;
+  }
+  .pane {
+    margin: 0 8px 8px;
+    border-radius: 14px;
+    padding: 20px 18px 18px;
+    gap: 14px;
+  }
+  .row {
+    gap: 14px;
+    padding: 12px 0;
+  }
+  .row-thumb {
+    width: 64px;
+    height: 42px;
+  }
+  .row-title {
+    font-size: 19px;
+  }
+  .row-sub {
+    font-size: 13px;
+  }
+  .prose {
+    font-size: 15px;
+  }
+  .prose h2 {
+    font-size: 22px;
+  }
+}
+
+/* ---------- view transitions ----------
+   Navigation: the browser-level view transition is disabled; the window's CSS size
+   transition and the header/pane fades are the whole animation.
+   Theme: html[data-theme] is the only switch — tokens and the classic toggle follow it. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .window,
+  .window-head,
+  .pane {
+    transition: none;
+  }
+  .theme-toggle .classic-core,
+  .theme-toggle .classic-clip,
+  .theme-toggle .classic-ray {
+    transition: none;
+  }
+}
