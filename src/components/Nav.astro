@@ -1,0 +1,30 @@
+---
+interface Props {
+  current: 'now' | 'about' | 'projects' | 'blog' | null;
+}
+const { current } = Astro.props;
+const items = [
+  { key: 'now', label: 'now', href: '/' },
+  { key: 'about', label: 'about', href: '/about' },
+  { key: 'projects', label: 'projects', href: '/projects' },
+  { key: 'blog', label: 'blog', href: '/blog' },
+] as const;
+---
+
+<nav class="nav" aria-label="Primary">
+  <ul>
+    <span class="nav-dot" aria-hidden="true"></span>
+    {
+      items.map((item) => (
+        <li>
+          <a href={item.href} aria-current={current === item.key ? 'page' : undefined}>
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+    <li>
+      <a class="dim" href="/assets/cv.pdf" target="_blank" rel="noopener">cv ↓</a>
+    </li>
+  </ul>
+</nav>
