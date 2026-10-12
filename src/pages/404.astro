@@ -1,19 +1,46 @@
 ---
 import Base from '../layouts/Base.astro';
+import NavButtons from '../components/NavButtons.astro';
 ---
 
-<Base title="not found" current={null}>
-  <div class="pane-label"><span class="mono">404</span></div>
-  <p class="serif big">nothing up here.</p>
-  <p class="muted">the page you wanted drifted off. <a class="u" href="/">back to now →</a></p>
+<Base title="not found" current={null} size="small">
+  <NavButtons current={null} />
+  <div class="alert">
+    <div class="bomb" aria-hidden="true">
+      <svg viewBox="0 0 32 32" shape-rendering="crispEdges" width="48" height="48">
+        <path
+          fill="#000"
+          d="M20 2h2v2h-2zM22 4h2v2h-2zM24 6h2v2h-2zM18 6h2v4h-2zM16 10h6v2h-6zM12 12h14v2H12zM10 14h18v2H10zM8 16h22v12H8zM10 28h18v2H10z"
+        />
+        <path fill="#fff" d="M12 18h4v4h-4z" />
+      </svg>
+    </div>
+    <div class="alert-copy">
+      <p class="chicago">Sorry, a system error occurred.</p>
+      <p>The page you wanted is not on this disk.</p>
+      <div class="btn-row">
+        <a class="btn" href="/">Restart</a>
+      </div>
+    </div>
+  </div>
 </Base>
 
 <style>
-  .big {
-    font-size: 26px;
+  .alert {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 24px 8px;
+  }
+  .alert-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .alert-copy p {
     margin: 0;
   }
-  p {
-    margin: 0;
+  .alert-copy .btn-row {
+    padding-top: 10px;
   }
 </style>

@@ -14,7 +14,6 @@ stack: [React/TypeScript, Node/Express (fluent-ffmpeg), FastAPI (MoviePy)]
 # meta
 status: active
 role: solo
-tags: [tool, video, web]
 
 # media (optional)
 thumb: 

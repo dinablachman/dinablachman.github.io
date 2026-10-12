@@ -1,48 +1,84 @@
 ---
 import Base from '../layouts/Base.astro';
-import { fmtMonth } from '../lib/format';
-const updated = fmtMonth(new Date());
+import NavButtons from '../components/NavButtons.astro';
+import Pet from '../components/Pet.astro';
 ---
 
-<Base title="dina blachman" current="now">
-  <div class="pane-label">
-    <span class="mono">now · {updated}</span>
+<Base title="dina blachman" current="now" size="small">
+  <NavButtons current="now" />
+
+  <div class="intro section">
+    <h1 class="name">
+      <span class="hi">hi, i’m</span>
+      <span class="tech-text" data-tech-text><span class="tech-text-src">Dina Blachman</span></span>
+    </h1>
+    <p>i’m a senior at Barnard studying Computer Science + Philosophy.</p>
+    <p>
+      right now, i’m writing my CS thesis on the interpretability of AI-generated writing and working through the
+      <a class="u" href="https://learn.arena.education/" target="_blank" rel="noopener">ARENA</a> curriculum.
+    </p>
+    <p>
+      i’m also a <a class="u" href="https://cursor.com/campus-leads" target="_blank" rel="noopener">SpaceXAI</a> Campus
+      Lead and a Community Lead at <a class="u" href="https://www.adicu.com/" target="_blank" rel="noopener">Columbia ADI</a>.
+    </p>
+    <Pet />
   </div>
 
-  <div class="now">
-    <p class="lede serif">writing my CS thesis on human–AI collaboration.</p>
-    <p>
-      Campus Lead at <a class="u" href="https://cursor.com/campus-leads" target="_blank" rel="noopener">SpaceXAI</a> · Community
-      Lead at <a class="u" href="https://www.adicu.com/" target="_blank" rel="noopener">ADI</a>
-    </p>
-    <p class="muted">recently: SWE intern at J.P. Morgan Chase — knowledge management for AI agents.</p>
+  <div class="rule"></div>
+
+  <div class="btn-row contact">
+    <a class="btn" href="mailto:db3654@barnard.edu">Email</a>
+    <a class="btn" href="https://github.com/dinablachman" target="_blank" rel="noopener">GitHub</a>
+    <a class="btn" href="https://www.linkedin.com/in/dinablachman/" target="_blank" rel="noopener">LinkedIn</a>
   </div>
 </Base>
 
 <style>
-  .now {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    /* breathing room under the last line, matching the pane's top padding */
-    padding-bottom: 28px;
+  /* Vertical rhythm: 14px between a button row and its rule (nav above, contact
+     below), 28px between a rule and the text inside. The right 226px of the intro
+     is the bunny's column (see PET_CONFIG.seat); the text wraps in the 560px left. */
+  .intro {
+    position: relative; /* the bunny sits in here, on the rule below */
+    gap: 10px;
+    padding: 28px 226px 28px 0;
   }
-  .now p {
+  .intro p {
     margin: 0;
   }
-  .lede {
-    font-size: 26px;
-    line-height: 1.15;
+  .intro .name {
+    margin: 0; /* no UA h1 margin: the rhythm above is the whole gap */
+    padding-bottom: 4px;
   }
-  @media (max-width: 720px) {
-    .lede {
-      font-size: 22px;
-    }
-    .now p {
-      font-size: 15px;
-    }
-    .now {
-      padding-bottom: 20px;
-    }
+  .contact {
+    padding-top: 14px;
+  }
+  /* both parts in Chicago; "hi, i'm" one step smaller than the name. Its own line
+     box is dropped from the line's height so the heading is exactly one 34px line. */
+  .hi {
+    font-size: 24px;
+    line-height: 1;
+  }
+  .name {
+    white-space: nowrap;
+    line-height: 34px;
+  }
+  .name .tech-text {
+    font-size: 30px;
   }
 </style>
+
+<script>
+  import { mountTechText } from '../scripts/tech-text';
+
+  // the name is a canvas while the page is live; the span underneath keeps layout and accessibility
+  const live: Array<() => void> = [];
+  const mount = () => {
+    for (const el of document.querySelectorAll<HTMLElement>('[data-tech-text]')) {
+      const destroy = mountTechText(el, { color: '#000000', accentColor: '#000000', strokeWidth: 1 });
+      if (destroy) live.push(destroy);
+    }
+  };
+  mount();
+  document.addEventListener('astro:page-load', mount);
+  document.addEventListener('astro:before-swap', () => live.splice(0).forEach((destroy) => destroy()));
+</script>

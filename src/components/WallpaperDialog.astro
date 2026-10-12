@@ -1,0 +1,40 @@
+---
+/**
+ * The Edit Wallpaper window (File menu). A small Finder-style window: striped
+ * title bar with a close box, a list of the files in public/assets/wallpaper on
+ * the left, a preview box and Apply / Cancel on the right. Opened and driven
+ * by src/scripts/wallpaper.ts; rendered hidden.
+ */
+import { readdirSync } from 'node:fs';
+
+const files = readdirSync(new URL('../../public/assets/wallpaper/', import.meta.url))
+  .filter((f) => /\.(jpe?g|png|gif|webp)$/i.test(f))
+  .sort();
+---
+
+<div class="wp-dialog" role="dialog" aria-label="Edit Wallpaper" data-wallpaper-dialog hidden>
+  <div class="titlebar">
+    <button type="button" class="closebox" aria-label="Cancel" data-wallpaper-cancel></button>
+    <span class="title">Edit Wallpaper</span>
+  </div>
+  <div class="wp-body">
+    <ul class="wp-list" role="listbox" aria-label="Wallpapers">
+      {
+        files.map((f) => (
+          <li class="wp-item" role="option" aria-selected="false" data-wallpaper-item={f}>
+            {f}
+          </li>
+        ))
+      }
+    </ul>
+    <div class="wp-side">
+      <div class="wp-preview">
+        <img alt="" data-wallpaper-preview />
+      </div>
+      <div class="wp-actions">
+        <button type="button" class="btn is-default" data-wallpaper-apply>Apply</button>
+        <button type="button" class="btn" data-wallpaper-cancel>Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

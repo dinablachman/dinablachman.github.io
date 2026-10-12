@@ -1,0 +1,56 @@
+---
+/** The right-hand document for a project write-up: ruler, title, subtitle, stack, links, hero, body. */
+import { render, type CollectionEntry } from 'astro:content';
+import Ruler from './Ruler.astro';
+import { readingTime, publicFile } from '../lib/format';
+import { fmtLong } from '../lib/entries';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+const { project } = Astro.props;
+const { Content } = await render(project);
+const mins = readingTime(project.body);
+const hero = publicFile(project.data.gif);
+const d = project.data;
+---
+
+<Ruler />
+<div class="doc-scroll" data-scroll>
+<div class="doc-body">
+  <h1 class="doc-title">{d.title}</h1>
+  {d.subtitle && <p class="doc-meta">{d.subtitle}</p>}
+  <p class="doc-meta">
+    {fmtLong(d.date)}.&nbsp; Project.&nbsp; {mins} {mins === 1 ? 'minute' : 'minutes'}.{d.stack.length ? `  ${d.stack.join(', ')}.` : ''}
+  </p>
+  {
+    (d.repo_url || d.live_url) && (
+      <div class="btn-row">
+        {d.repo_url && (
+          <a class="btn" href={d.repo_url} target="_blank" rel="noopener">
+            Repo
+          </a>
+        )}
+        {d.live_url && (
+          <a class="btn" href={d.live_url} target="_blank" rel="noopener">
+            Live
+          </a>
+        )}
+      </div>
+    )
+  }
+  {hero && <div class="frame hero"><img src={hero} alt={`${d.title} demo`} loading="lazy" /></div>}
+  <div class="prose">
+    <Content />
+  </div>
+  <p class="doc-end small">{d.status ?? ''}{d.role ? `  ·  ${d.role}` : ''}</p>
+</div>
+</div>
+
+<style>
+  .hero {
+    width: 100%;
+    max-width: 560px;
+    aspect-ratio: 16 / 10;
+  }
+</style>

@@ -14,11 +14,10 @@ stack: [JavaScript, Chrome Extension API]
 # meta
 status: active
 role: solo
-tags: [tool, browser, productivity]
 
 # media (optional)
-thumb: /assets/notion-toggle/cover.jpg
-poster: /assets/notion-toggle/demo-poster.jpg
+thumb: 
+poster: 
 gif: /assets/gifs/notion-toggle.gif
 ---
 

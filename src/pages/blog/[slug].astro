@@ -1,7 +1,10 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { fmtDate, readingTime } from '../../lib/format';
+import NavButtons from '../../components/NavButtons.astro';
+import TwoPane from '../../components/TwoPane.astro';
+import PostDocument from '../../components/PostDocument.astro';
+import { listGroups } from '../../lib/entries';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -9,61 +12,12 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
-const mins = readingTime(post.body);
-
-const all = (await getCollection('blog'))
-  .filter((p) => !p.data.coming_soon)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-const idx = all.findIndex((p) => p.id === post.id);
-const next = all.length > 1 ? all[(idx + 1) % all.length] : null;
+const groups = await listGroups();
 ---
 
-<Base title={post.data.title} current="blog" wide>
-  <div class="pane-label">
-    <a class="mono back" href="/blog">← blog</a>
-    <span class="mono">{fmtDate(post.data.date)}<span class="hide-m"> · essay</span> · {mins} min</span>
-  </div>
-
-  <h1 class="title serif">{post.data.title}</h1>
-
-  {
-    post.data.coming_soon && (
-      <p class="soon mono">draft · coming soon</p>
-    )
-  }
-
-  <article class="prose">
-    <Content />
-  </article>
-
-  <div class="pane-foot">
-    <span class="mono-plain">— end —</span>
-    {next && next.id !== post.id && <a class="u" href={`/blog/${next.id}`}>next: {next.data.title} →</a>}
-  </div>
+<Base title={post.data.title} current="blog">
+  <NavButtons current="blog" />
+  <TwoPane groups={groups} activeKey={`blog:${post.id}`}>
+    <PostDocument post={post} />
+  </TwoPane>
 </Base>
-
-<style>
-  .back {
-    color: var(--ink);
-  }
-  .back:hover {
-    color: var(--accent);
-  }
-  .title {
-    font-size: 36px;
-    line-height: 1.1;
-    letter-spacing: var(--tracking-tight);
-    margin: 4px 0 0;
-    font-weight: 400;
-  }
-  .soon {
-    margin: 0;
-    color: var(--accent);
-  }
-  @media (max-width: 720px) {
-    .title {
-      font-size: 28px;
-    }
-  }
-</style>

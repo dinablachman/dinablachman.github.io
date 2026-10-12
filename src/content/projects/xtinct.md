@@ -14,7 +14,6 @@ stack: [React, TypeScript, Wayback Machine API, Node.js]
 # meta
 status: active
 role: solo
-tags: [tool, web, archive]
 
 # media (optional)
 thumb: 

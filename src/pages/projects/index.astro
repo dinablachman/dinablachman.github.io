@@ -1,36 +1,36 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import NavButtons from '../../components/NavButtons.astro';
 import { publicFile } from '../../lib/format';
 
 const projects = (await getCollection('projects')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-const pub = publicFile;
 ---
 
 <Base title="projects" current="projects">
-  <div class="pane-label">
-    <span class="mono">projects · {projects.length}</span>
-    <span class="mono-plain hide-m">click for write-up</span>
-  </div>
+  <NavButtons current="projects" />
 
-  <ul class="rows">
+  <ul class="gallery">
     {
-      projects.map((p) => {
-        const media = pub(p.data.gif) ?? pub(p.data.thumb) ?? pub(p.data.poster);
+      projects.map((p, i) => {
+        const media = publicFile(p.data.gif) ?? publicFile(p.data.thumb) ?? publicFile(p.data.poster);
         return (
-        <li>
-          <a class="row" href={`/projects/${p.id}`}>
-            <span class="row-thumb">{media && <img src={media} alt="" loading="lazy" />}</span>
-            <span class="row-body">
-              <span class="row-title">{p.data.title}</span>
-              <span class="row-sub">
-                {p.data.subtitle}
-                {p.data.stack.length ? ` · ${p.data.stack.slice(0, 3).join(', ').toLowerCase()}` : ''}
+          <li>
+            <a class="card" href={`/projects/${p.id}`}>
+              <span class="frame">
+                {media ? (
+                  <img src={media} alt="" loading={i < 4 ? 'eager' : 'lazy'} decoding="async" />
+                ) : (
+                  <span class="empty" aria-hidden="true" />
+                )}
               </span>
-            </span>
-            <span class="row-meta">{p.data.date.getFullYear()}</span>
-          </a>
-        </li>
+              <span class="card-title">{p.data.title}</span>
+              <span class="card-sub">
+                <span class="sub">{p.data.subtitle}</span>
+                <span class="small year">{p.data.date.getFullYear()}</span>
+              </span>
+            </a>
+          </li>
         );
       })
     }
@@ -38,11 +38,26 @@ const pub = publicFile;
 </Base>
 
 <style>
-  .row-thumb img {
-    filter: saturate(0.85);
-    transition: filter 200ms;
+  .gallery {
+    list-style: none;
+    margin: 0;
+    padding-top: 14px;
   }
-  .row:hover .row-thumb img {
-    filter: none;
+  .empty {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--dither);
+  }
+  .sub {
+    min-width: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .year {
+    flex-shrink: 0;
+    line-height: var(--leading-body);
   }
 </style>

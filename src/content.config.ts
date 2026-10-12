@@ -24,9 +24,7 @@ const blog = defineCollection({
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
-    categories: stringList,
     coming_soon: z.boolean().default(false),
-    preview: z.string().optional().default(''),
   }),
 });
 
@@ -43,12 +41,9 @@ const projects = defineCollection({
     stack: stringList,
     status: z.string().optional(),
     role: z.string().optional(),
-    tags: stringList,
     thumb: optionalUrl,
     poster: optionalUrl,
     gif: optionalUrl,
-    /** short description used in the /now pane, list rows, etc. */
-    blurb: z.string().optional(),
   }),
 });
 

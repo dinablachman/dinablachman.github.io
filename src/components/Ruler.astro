@@ -1,0 +1,16 @@
+---
+/** MacWrite-style ruler: tick marks every 24px, margin triangles at the ends, one tab stop. */
+const ticks: number[] = [];
+for (let x = 8.5; x < 1200; x += 24) ticks.push(x);
+---
+
+<div class="ruler" aria-hidden="true">
+  <svg viewBox="0 0 1200 20" preserveAspectRatio="xMinYMid slice">
+    <g stroke="#000" stroke-width="1">
+      <line x1="0" y1="14.5" x2="1200" y2="14.5"></line>
+      {ticks.map((x, i) => <line x1={x} y1={i % 2 === 0 ? 8 : 11} x2={x} y2={14} />)}
+    </g>
+    <path d="M8 15 L4 19 H12 Z" fill="#000"></path>
+    <path d="M200 15 L196 19 H204 Z" fill="#fff" stroke="#000"></path>
+  </svg>
+</div>

@@ -1,21 +1,21 @@
 /**
  * Bunny companion — every tunable in one place.
- * Sizes are CSS px, times are ms. Frame data mirrors bunny-line-art-assets/manifest.json.
+ * Sizes are CSS px, times are ms.
  */
 export const PET_CONFIG = {
-  /** Source frames are 512 × 512 on 3 × 3 atlases; all share one floor line. */
-  frame: { size: 512, floorY: 458, bodyTopY: 109 },
+  /** Pixel frames are 192 × 192 on a 6 × 5 atlas. The idle body spans rows bodyTopY to floorY (exclusive). */
+  frame: { size: 192, bodyTopY: 42, floorY: 172 },
 
-  /** Desktop (> 720px): seated on the card's top edge, right of centre. */
-  desktop: {
-    size: 280, // canvas width/height
-    offsetFromCenter: 118, // canvas left edge, relative to the viewport centre (home card is 720 wide → body ends 40px from its right corner)
-    seatOverlap: 14, // how far the feet sink past the card's top edge so it reads as resting
-    homeCardHeight: 560, // .window[data-size='small'] height — the card + bunny are centred as one group
+  /**
+   * Now page: floating in the column the intro reserves to the right of its text
+   * (`.intro` padding-right in index.astro), the body centred in it both ways.
+   * scale is CSS px per sprite px. 1 and 1.5 land every sprite pixel on whole device
+   * pixels of a 2× display; 1.25 alternates 2 and 3 device pixels per sprite pixel.
+   */
+  seat: {
+    scale: 1.25,
+    column: 226, // width of the bunny's column; the body (84 sprite px wide) is centred in it
   },
-
-  /** Mobile (≤ 720px): lower-left corner of the viewport, below the card (home only). */
-  mobile: { size: 160, left: 8, bottom: 20, minViewportHeight: 760 },
 
   /** Reposition hop: one bounded shift, never drifting past ±bounds from home. */
   move: { step: [8, 16], bounds: 16 },
@@ -32,21 +32,10 @@ export const PET_CONFIG = {
     cooldown: 8000,
   },
 
-  /**
-   * Continuous "life" under the frame swaps (after feral-blob): everything is a
-   * sub-pixel transform on the body, anchored at the feet. Off under reduced motion.
-   */
+  /** Nothing moves between frame swaps: fractional transforms would resample the 1-bit sprite into grey. */
   life: {
-    breathe: true,
-    breath: { period: 4600, scaleY: 0.008, scaleX: -0.004, lift: 1 }, // awake
-    sleepBreath: { period: 5600, scaleY: 0.005, scaleX: -0.002, lift: 0.4 }, // asleep: slower, smaller
-    fidget: true,
-    fidgetEvery: [3000, 6500], // new random micro-pose this often…
-    fidgetGlide: [1400, 2600], // …eased into over this long
-    fidgetRotate: 0.8, // ± degrees, about the feet (kept small: a bitmap's thin lines crawl if it turns too far)
-    fidgetLift: 1, // ± px
-    crossfade: 220, // ms dissolve used only for the slow sleep/wake pose changes; everything else cuts
-    hop: { ease: 'cubic-bezier(0.34, 1.35, 0.64, 1)', duration: 420, landSquash: 0.06 }, // overshoot + squash-and-pop on landing
+    crossfade: 0, // ms dissolve for the slow sleep/wake pose changes; 0 = hard cuts, like every other frame
+    hop: { ease: 'step-start', duration: 0 }, // the container jumps whole pixels on the airborne frame
   },
 
   timing: {
@@ -58,21 +47,18 @@ export const PET_CONFIG = {
     gesture: [25000, 50000], // one head tilt, ear twitch, or ears perking up
     groom: [180000, 360000], // rare: a quick face wash
     reposition: [90000, 180000], // one hop
-    sleepAfter: 60000, // light theme: inactivity before falling asleep
-    /* night theme: sleeping is the default; stirs awake now and then */
-    nightSleepAfter: 20000, // after a click/keypress at night, doze off again sooner
-    nightStir: [45000, 90000], // wake briefly on its own, then settle back down
-    nightStirAwake: 3000,
+    sleepAfter: 60000, // inactivity before falling asleep
   },
 } as const;
 
-/** Layout numbers derived from the config (shared by Base.astro and Pet.astro). */
+/** Layout numbers derived from the config (used by Pet.astro). All in CSS px. */
 export function petLayout() {
-  const { size, seatOverlap } = PET_CONFIG.desktop;
-  const { size: src, floorY, bodyTopY } = PET_CONFIG.frame;
-  const lift = (floorY / src) * size - seatOverlap; // canvas top sits this far above the card's top edge
-  const headroom = lift - (bodyTopY / src) * size; // visible bunny height above the card
-  return { size, dx: PET_CONFIG.desktop.offsetFromCenter, lift: Math.round(lift), headroom: Math.round(headroom) };
+  const { scale, column } = PET_CONFIG.seat;
+  const { size: src, bodyTopY, floorY } = PET_CONFIG.frame;
+  const size = src * scale; // canvas width/height
+  const mid = Math.round(((bodyTopY + floorY) / 2) * scale); // the body's vertical centre, from the canvas top
+  const overhang = (size - column) / 2; // the canvas is wider than its column; it sticks out this far on each side
+  return { size, mid, overhang };
 }
 
 export type FrameName =
@@ -85,8 +71,8 @@ export type FrameName =
   | 'look-left' | 'look-right' | 'look-up' | 'look-up-left' | 'look-up-right';
 
 /**
- * One atlas for every frame (public/assets/bunny/bunny.png, 6 × 5 cells of 512px), quantised in a
- * single pass so colours are identical across frames, and decoded once so swaps never stutter.
+ * One atlas for every frame (public/assets/bunny/bunny.png, 6 × 5 cells of 192px), using only
+ * opaque black, opaque white and transparency, and decoded once so swaps never stutter.
  * Unused pack frames (the down-looks, loaf, sleep-flop, stretch) are left out.
  */
 export const SHEET = { cols: 6, rows: 5 } as const;

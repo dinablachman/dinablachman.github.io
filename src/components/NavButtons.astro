@@ -1,0 +1,23 @@
+---
+interface Props {
+  current: 'now' | 'about' | 'projects' | 'blog' | null;
+}
+const { current } = Astro.props;
+const items = [
+  { key: 'now', label: 'Now', href: '/' },
+  { key: 'about', label: 'About', href: '/about' },
+  { key: 'projects', label: 'Projects', href: '/projects' },
+  { key: 'blog', label: 'Blog', href: '/blog' },
+] as const;
+---
+
+<nav class="nav-row" aria-label="Primary">
+  {
+    items.map((item) => (
+      <a class="btn" href={item.href} aria-current={current === item.key ? 'page' : undefined} data-nav={item.key}>
+        {item.label}
+      </a>
+    ))
+  }
+</nav>
+<div class="rule"></div>

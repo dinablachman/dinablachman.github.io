@@ -14,7 +14,6 @@ stack: React, TypeScript, Vite, Tailwind, Web Share API
 # meta
 status: active
 role: solo
-tags: [game, ai, video, web, frontend, retro]
 
 # media (optional)
 thumb: 

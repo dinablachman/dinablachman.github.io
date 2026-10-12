@@ -1,0 +1,29 @@
+---
+/** The right-hand document for an essay: ruler, title, meta line, markdown body. */
+import { render, type CollectionEntry } from 'astro:content';
+import Ruler from './Ruler.astro';
+import { readingTime } from '../lib/format';
+import { fmtLong } from '../lib/entries';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+const { post } = Astro.props;
+const { Content } = await render(post);
+const mins = readingTime(post.body);
+---
+
+<Ruler />
+<!-- the ruler stays put; only this part scrolls (the window's scrollbar binds to it) -->
+<div class="doc-scroll" data-scroll>
+  <div class="doc-body">
+    <h1 class="doc-title">{post.data.title}</h1>
+    <p class="doc-meta">
+      {fmtLong(post.data.date)}.&nbsp; Essay.&nbsp; {mins} {mins === 1 ? 'minute' : 'minutes'}.{post.data.coming_soon && '  Draft.'}
+    </p>
+    <div class="prose">
+      <Content />
+    </div>
+    <p class="doc-end small">— end —</p>
+  </div>
+</div>

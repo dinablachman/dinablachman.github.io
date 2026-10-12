@@ -14,11 +14,10 @@ stack: [Machine Learning, Policy Analysis, Risk Assessment, Legal Framework]
 # meta
 status: published
 role: undergraduate
-tags: [ai, law, fine-tuning, research]
 
 # media (optional)
-thumb: /assets/research/cover.jpg
-poster: /assets/research/demo-poster.jpg
+thumb: 
+poster: 
 ---
 
 This research presents a novel framework for regulating artificial intelligence systems, particularly in contexts where AI decisions have significant real-world consequences.

@@ -1,9 +1,7 @@
 ---
 title:  "why i started a blog on neocities (and you should too!)"
 date:   2025-04-18 00:00:31 -0400
-categories: jekyll update
 coming_soon: true
-preview: ""
 ---
 
 i originally wrote this on my personal blog because i wanted to share a bit about why i started that blog in the first place. i’m deciding to share it here too because the backstory, process, and conclusions helped me understand in what ways i want programming to be a part of my life. it’s also just a very enjoyable and satisfying personal project that i believe devs should try (if you know HTML/CSS, you have no excuse). 

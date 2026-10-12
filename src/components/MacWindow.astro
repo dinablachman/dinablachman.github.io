@@ -1,0 +1,60 @@
+---
+/**
+ * The System 1 window: striped title bar with close box, Finder-style info
+ * header (New York time and temperature, nothing else), scrolling pane with a
+ * drawn vertical scrollbar, horizontal bar with the size box. The element
+ * persists across client-side navigations; Base.astro swaps its pane children
+ * from the incoming page. Title ("welcome to my website!") and header never change.
+ */
+interface Props {
+  size: 'small' | 'large';
+}
+const { size } = Astro.props;
+---
+
+<main class="window" data-size={size} transition:persist="window">
+  <div class="titlebar">
+    <span class="closebox" aria-hidden="true"></span>
+    <span class="title">welcome to my website!</span>
+  </div>
+
+  <div class="infobar">
+    <span></span>
+    <span class="mid" data-ny-time>New York</span>
+    <span class="right" data-ny-temp></span>
+  </div>
+
+  <div class="body-row">
+    <section class="pane" data-pane>
+      <slot />
+    </section>
+
+    <div class="vscroll" data-vscroll aria-hidden="true">
+      <button type="button" class="sb-arrow up" data-sb="up" tabindex="-1">
+        <svg viewBox="0 0 10 10"><path d="M5 1 L9 5 H6.5 V9 H3.5 V5 H1 Z" /></svg>
+      </button>
+      <div class="track" data-sb="track">
+        <div class="thumb" data-sb="thumb"></div>
+      </div>
+      <button type="button" class="sb-arrow down" data-sb="down" tabindex="-1">
+        <svg viewBox="0 0 10 10"><path d="M5 9 L1 5 H3.5 V1 H6.5 V5 H9 Z" /></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="hscroll" aria-hidden="true">
+    <span class="sb-arrow left">
+      <svg viewBox="0 0 10 10"><path d="M1 5 L5 1 V3.5 H9 V6.5 H5 V9 Z" /></svg>
+    </span>
+    <span class="track"></span>
+    <span class="sb-arrow right">
+      <svg viewBox="0 0 10 10"><path d="M9 5 L5 9 V6.5 H1 V3.5 H5 V1 Z" /></svg>
+    </span>
+    <span class="sizebox">
+      <svg viewBox="0 0 12 12">
+        <rect x="0.5" y="3.5" width="7" height="7" />
+        <rect x="3.5" y="0.5" width="8" height="8" />
+      </svg>
+    </span>
+  </div>
+</main>

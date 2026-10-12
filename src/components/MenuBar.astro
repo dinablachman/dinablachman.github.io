@@ -1,0 +1,112 @@
+---
+/**
+ * Screen-level menu bar (System 1). Menus open and close for real; items are
+ * inert for now. Each item carries `data-action` so wiring it later is a matter
+ * of listening for clicks on `[data-action]` in menubar.ts.
+ */
+type Item = { label: string; shortcut?: string; action?: string; disabled?: boolean } | 'sep';
+type Menu = { key: string; title: string; items: Item[] };
+
+const menus: Menu[] = [
+  {
+    key: 'apple',
+    title: '',
+    items: [{ label: 'About This Site…', action: 'about-site' }, 'sep', { label: 'Alarm Clock', disabled: true }, { label: 'Scrapbook', disabled: true }],
+  },
+  {
+    key: 'file',
+    title: 'File',
+    items: [
+      { label: 'Email Dina', shortcut: '⌘E', action: 'email' },
+      { label: 'Open Résumé', shortcut: '⌘R', action: 'resume' },
+      'sep',
+      { label: 'Edit Wallpaper…', action: 'wallpaper' },
+      'sep',
+      { label: 'Close', shortcut: '⌘W', disabled: true },
+      { label: 'Print…', disabled: true },
+    ],
+  },
+  {
+    key: 'edit',
+    title: 'Edit',
+    items: [
+      { label: 'Undo', shortcut: '⌘Z', disabled: true },
+      'sep',
+      { label: 'Cut', shortcut: '⌘X', disabled: true },
+      { label: 'Copy', shortcut: '⌘C', disabled: true },
+      { label: 'Paste', shortcut: '⌘V', disabled: true },
+      { label: 'Select All', shortcut: '⌘A', disabled: true },
+    ],
+  },
+  {
+    key: 'view',
+    title: 'View',
+    items: [
+      { label: 'Now', action: 'go:/' },
+      { label: 'About', action: 'go:/about' },
+      { label: 'Projects', action: 'go:/projects' },
+      { label: 'Blog', action: 'go:/blog' },
+    ],
+  },
+  {
+    key: 'special',
+    title: 'Special',
+    items: [{ label: 'Empty Trash', disabled: true }, { label: 'Erase Disk', disabled: true }],
+  },
+];
+---
+
+<nav class="menubar" aria-label="Menu bar" data-menubar>
+  <ul role="menubar">
+    {
+      menus.map((m) => (
+        <li role="none" data-menu={m.key}>
+          <button
+            type="button"
+            class:list={['menu-title', { apple: m.key === 'apple' }]}
+            role="menuitem"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label={m.key === 'apple' ? 'Bunny menu' : undefined}
+            data-menu-title
+          >
+            {m.key === 'apple' ? (
+              /* the bunny "peek" mark (ears and eyes over the bottom edge), 16 × 16 on a 16 × 18 box;
+                 same pixel grid as public/favicon.svg */
+              <svg viewBox="0 0 16 18" shape-rendering="crispEdges" aria-hidden="true">
+                <path
+                  fill="#000"
+                  d="M4 1h1v1h-1zM5 1h1v1h-1zM6 1h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM3 3h1v1h-1zM7 3h1v1h-1zM13 3h1v1h-1zM3 4h1v1h-1zM7 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM14 4h1v1h-1zM3 5h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM14 5h1v1h-1zM3 6h1v1h-1zM7 6h1v1h-1zM10 6h1v1h-1zM13 6h1v1h-1zM3 7h1v1h-1zM7 7h1v1h-1zM10 7h1v1h-1zM13 7h1v1h-1zM3 8h1v1h-1zM7 8h1v1h-1zM9 8h1v1h-1zM13 8h1v1h-1zM3 9h1v1h-1zM8 9h1v1h-1zM12 9h1v1h-1zM4 10h1v1h-1zM12 10h1v1h-1zM4 11h1v1h-1zM11 11h1v1h-1zM3 12h1v1h-1zM12 12h1v1h-1zM13 12h1v1h-1zM2 13h1v1h-1zM13 13h1v1h-1zM1 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM10 14h1v1h-1zM14 14h1v1h-1zM1 15h1v1h-1zM14 15h1v1h-1zM1 16h1v1h-1zM14 16h1v1h-1z"
+                />
+              </svg>
+            ) : (
+              m.title
+            )}
+          </button>
+          <ul class="menu" role="menu">
+            {m.items.map((it) =>
+              it === 'sep' ? (
+                <li class="menu-sep" role="separator" />
+              ) : (
+                <li
+                  class="menu-item"
+                  role="menuitem"
+                  aria-disabled={it.disabled ? 'true' : undefined}
+                  data-action={it.action}
+                >
+                  <span>{it.label}</span>
+                  {it.shortcut && <span>{it.shortcut}</span>}
+                </li>
+              ),
+            )}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<script>
+  import { initMenuBar } from '../scripts/menubar';
+  initMenuBar();
+</script>

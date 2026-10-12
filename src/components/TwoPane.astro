@@ -1,0 +1,54 @@
+---
+/**
+ * Blog layout: list box on the left (essays, project write-ups), document on the
+ * right. Rows are plain links; the ClientRouter swaps the pane and updates the
+ * URL, so every post stays linkable and the back button works.
+ */
+import type { ListGroup } from '../lib/entries';
+import { fmtShort } from '../lib/entries';
+
+interface Props {
+  groups: ListGroup[];
+  /** key of the open entry, e.g. `blog:why-i-started-a-blog` */
+  activeKey: string | null;
+}
+const { groups, activeKey } = Astro.props;
+---
+
+<div class="panes">
+  <nav class="listbox" aria-label="Posts">
+    {
+      groups.map((g, gi) => (
+        <>
+          {gi > 0 && <div class="rule" />}
+          <span class="group-head">{g.head}</span>
+          {g.items.map((it) => {
+            const on = it.key === activeKey;
+            return (
+              <a
+                class:list={['item', { soon: it.soon && !on }]}
+                href={it.href}
+                aria-current={on ? 'page' : undefined}
+                data-key={it.key}
+              >
+                <span class="date">{it.soon ? 'soon' : fmtShort(it.date)}</span>
+                <span class="label">{it.title}</span>
+              </a>
+            );
+          })}
+        </>
+      ))
+    }
+    <div class="listbox-foot"></div>
+  </nav>
+
+  <article class="document">
+    <slot />
+  </article>
+</div>
+
+<style>
+  .listbox-foot {
+    height: 6px;
+  }
+</style>
