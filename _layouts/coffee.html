@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ page.title }} · {{ site.title }}</title>
+  <meta name="description" content="{{ page.description | default: 'make a cup of coffee.' }}">
+  <meta name="theme-color" content="#e9ae84">
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&display=swap">
+  <link rel="stylesheet" href="{{ '/assets/coffee/css/coffee.css' | relative_url }}">
+  <link rel="preload" as="image" href="{{ '/assets/coffee/art/glass.png' | relative_url }}">
+</head>
+<body class="coffee-body">
+  {{ content }}
+  <script type="module" src="{{ '/assets/coffee/js/main.js' | relative_url }}"></script>
+</body>
+</html>
