@@ -39,15 +39,18 @@ const photos = [
 
   <div class="section">
     <span class="section-head">My camera roll</span>
-    <ul class="grid" aria-label="my camera roll">
-      {
-        photos.map((p) => (
-          <li class="frame">
-            <img src={p.src} alt={p.alt} width="200" height="150" loading="lazy" decoding="async" />
-          </li>
-        ))
-      }
-    </ul>
+    <!-- one row, scrolled sideways; scripts/roll.ts flags the edge that has more photos -->
+    <div class="roll" data-roll>
+      <ul class="roll-strip" aria-label="my camera roll" tabindex="0" data-roll-strip>
+        {
+          photos.map((p) => (
+            <li class="frame">
+              <img src={p.src} alt={p.alt} width="200" height="150" loading="lazy" decoding="async" />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </div>
 </Base>
 
@@ -71,16 +74,67 @@ const photos = [
   .bio p {
     margin: 0;
   }
-  .grid {
+  /* --shot-w is the tile width; at 148px all seven fit the large window's pane
+     (1126px), so the row only overflows once there are more photos or less room */
+  .roll {
+    position: relative;
+    --shot-w: 148px;
+    --fade-w: 36px;
+  }
+  .roll-strip {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
     gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-  .grid li {
+  .roll-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .roll-strip li {
+    width: var(--shot-w);
     aspect-ratio: 4 / 3;
+  }
+  /* the photos dissolve into the paper on an edge that still has more behind it.
+     z-index clears the tiles, which are positioned (.frame) and would paint over
+     the start fade; the window's `contain` keeps it out of the rest of the UI. */
+  .roll::before,
+  .roll::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    width: var(--fade-w);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .roll::before {
+    left: 0;
+    background: linear-gradient(to right, var(--paper), transparent);
+  }
+  .roll::after {
+    right: 0;
+    background: linear-gradient(to left, var(--paper), transparent);
+  }
+  .roll[data-more-start]::before,
+  .roll[data-more-end]::after {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .roll-strip {
+      scroll-behavior: smooth;
+    }
+    .roll::before,
+    .roll::after {
+      transition: opacity 120ms linear;
+    }
   }
   @media (max-width: 720px) {
     .about {
@@ -91,8 +145,22 @@ const photos = [
       height: 164px;
       align-self: flex-start;
     }
-    .grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
   }
 </style>
+
+<script>
+  import { initRoll } from '../scripts/roll';
+
+  // the pane's children are replaced on a client-side navigation, so bind again each time
+  let stop: (() => void) | null = null;
+  const mount = () => {
+    stop?.();
+    stop = initRoll();
+  };
+  mount();
+  document.addEventListener('astro:page-load', mount);
+  document.addEventListener('astro:before-swap', () => {
+    stop?.();
+    stop = null;
+  });
+</script>
