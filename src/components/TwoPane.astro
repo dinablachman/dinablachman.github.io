@@ -26,13 +26,14 @@ const { groups, activeKey } = Astro.props;
             const on = it.key === activeKey;
             return (
               <a
-                class:list={['item', { soon: it.soon && !on }]}
+                class="item"
                 href={it.href}
                 aria-current={on ? 'page' : undefined}
                 data-key={it.key}
               >
-                <span class="date">{it.soon ? 'soon' : fmtShort(it.date)}</span>
+                <span class="date">{fmtShort(it.date)}</span>
                 <span class="label">{it.title}</span>
+                {it.soon && <span class="soon-tag">coming soon</span>}
               </a>
             );
           })}

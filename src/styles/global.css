@@ -549,17 +549,23 @@ a.btn {
 .listbox .item .label {
   min-width: 0;
 }
+.listbox .item .soon-tag {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--font-small);
+  font-size: var(--text-small);
+  line-height: var(--leading-body);
+  color: #666666;
+}
+.listbox .item[aria-current='page'] .soon-tag,
+.listbox .item:hover .soon-tag {
+  color: #b3b3b3;
+}
 .listbox .item[aria-current='page'] {
   background: var(--ink);
   color: var(--paper);
 }
-.listbox .item.soon {
-  color: transparent;
-  background: var(--dither);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-.listbox .item:not([aria-current='page']):not(.soon):hover {
+.listbox .item:not([aria-current='page']):hover {
   background: var(--ink);
   color: var(--paper);
 }
