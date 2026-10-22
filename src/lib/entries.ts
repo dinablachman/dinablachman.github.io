@@ -35,7 +35,7 @@ export async function listGroups(): Promise<ListGroup[]> {
         href: `/projects/${p.id}`,
         title: p.data.title.toLowerCase(),
         date: p.data.date,
-        soon: false,
+        soon: p.data.coming_soon,
       })),
     },
   ];
